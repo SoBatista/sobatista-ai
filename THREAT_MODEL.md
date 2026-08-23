@@ -14,7 +14,11 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Runtime redaction of all output/logs/exceptions (`core/redaction.py`),
     with registered exact-value scrubbing.
   - ✅ Config and state files created `0600`; directories `0700`.
-  - 🚧 Least-privilege OAuth scopes; monetary/write scopes separate.
+  - ✅ Least-privilege OAuth scopes (YouTube): read-only by default; monetary and
+    caption (`force-ssl`) scopes are separate explicit opt-ins
+    (`connectors/youtube/scopes.py`).
+  - ✅ Installed-app OAuth uses PKCE (S256) and `state` CSRF validation
+    (`connectors/youtube/oauth.py`).
 
 ## 2. Malicious Notion pages / documents
 - **Risk:** A page instructs the model to exfiltrate data or take actions.
@@ -23,8 +27,10 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
     (`cli/ask.py` system prompt; enforced by design in the orchestrator).
   - ✅ Retrieved content cannot enable tools or change policy (tools are an
     explicit allowlist; `tools/base.py`, `core/orchestrator.py`).
-  - ✅ Terminal-escape sanitization on display (`core/safeterm.py`).
-  - 🚧 Connector data classified and egress-gated before reaching a cloud model.
+  - ✅ Terminal-escape sanitization on display (`core/safeterm.py`), applied to
+    untrusted YouTube titles/fields in `cli/youtube_cmd.py`.
+  - ✅ Connector data classified (INTERNAL) and egress-gated before reaching a
+    cloud model (`policies/engine.py`, enforced in the YouTube AI commands).
 
 ## 3. Prompt injection from comments / issues
 - **Risk:** Attacker-controlled text in a GitHub/Jira comment steers the model.
@@ -36,9 +42,10 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   attack.
 - **Controls:**
   - ✅ Sanitize before render (`core/safeterm.py`).
-  - 🚧 Transcript precedence rules (authorized captions → user-supplied →
-    explicit local workflow); never scrape arbitrary captions; never claim a
-    transcript was retrieved when it wasn't.
+  - ✅ Transcript precedence rules (authorized captions → user-supplied →
+    explicit local workflow) in `connectors/youtube/captions.py`; never scrapes
+    arbitrary captions; reports clearly when no authorized transcript exists and
+    never claims a transcript was retrieved when it wasn't.
 
 ## 5. Subprocess injection (CLI bridges)
 - **Risk:** Shell metacharacters in a prompt execute commands.
@@ -65,8 +72,9 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
 - **Controls:**
   - ✅ `--local-only` fails closed (`policies/engine.py`).
   - ✅ No silent local→cloud fallback.
-  - 🚧 Egress consent prompt showing connector + data class before send; audit
-    record of each egress (`storage/db.py` audit table is implemented).
+  - ✅ Egress consent prompt showing connector + data class before send, and an
+    audit record of each egress — wired through the YouTube AI commands
+    (`cli/youtube_cmd.py` → `cli/common.py::enforce_egress`, `storage/db.py`).
 
 ## 9. Dependency and release compromise
 - **Risk:** A malicious dependency or tampered release artifact.

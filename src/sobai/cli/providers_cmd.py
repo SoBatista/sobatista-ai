@@ -155,6 +155,16 @@ def model_use(
 def connect_command(
     ctx: typer.Context,
     target: Annotated[str, typer.Argument(help="Provider (anthropic|openai) or connector.")],
+    monetary: Annotated[
+        bool, typer.Option("--monetary", help="YouTube: also request revenue analytics scope.")
+    ] = False,
+    captions: Annotated[
+        bool, typer.Option("--captions", help="YouTube: also request caption access (broad scope).")
+    ] = False,
+    no_browser: Annotated[
+        bool,
+        typer.Option("--no-browser", help="YouTube: print the auth URL instead of opening it."),
+    ] = False,
 ) -> None:
     """Store credentials for a provider (or start a connector auth flow).
 
@@ -163,10 +173,15 @@ def connect_command(
     """
     app = get_ctx(ctx)
     name = target.lower()
+    if name == "youtube":
+        from .youtube_cmd import connect_youtube
+
+        connect_youtube(app, monetary=monetary, captions=captions, no_browser=no_browser)
+        return
     if name in KNOWN_CONNECTORS:
         raise NotFoundError(
-            f"Connector '{name}' setup is provided by the connectors module.",
-            hint=f"See `sobai {name} --help` once connectors are enabled in this build.",
+            f"Connector '{name}' setup is not available in this build yet.",
+            hint=f"`sobai connect {name}` arrives with the {name} connector.",
         )
     try:
         canon = canonical_provider(name)
@@ -194,10 +209,15 @@ def disconnect_command(
     """Remove stored credentials for a provider or connector."""
     app = get_ctx(ctx)
     name = target.lower()
+    if name == "youtube":
+        from .youtube_cmd import disconnect_youtube
+
+        disconnect_youtube(app)
+        return
     if name in KNOWN_CONNECTORS:
         raise NotFoundError(
-            f"Connector '{name}' is managed by the connectors module.",
-            hint="Connector disconnect arrives with the connectors build.",
+            f"Connector '{name}' is not available in this build yet.",
+            hint=f"`sobai disconnect {name}` arrives with the {name} connector.",
         )
     canon = canonical_provider(name)
     removed = app.creds.delete(cred_key(canon))

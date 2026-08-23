@@ -37,6 +37,7 @@ from .providers_cmd import (
     provider_app,
     providers_app,
 )
+from .youtube_cmd import youtube_app
 
 app = typer.Typer(
     name="sobai",
@@ -174,6 +175,7 @@ app.add_typer(model_app, name="model")
 app.add_typer(profile_app, name="profile")
 app.add_typer(runs_app, name="runs")
 app.add_typer(aliases_app, name="aliases")
+app.add_typer(youtube_app, name="youtube")
 
 config_app = typer.Typer(help="Inspect configuration.", no_args_is_help=True)
 config_app.command("show")(config_show)

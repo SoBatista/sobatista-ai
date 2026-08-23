@@ -13,18 +13,12 @@ import httpx
 
 from sobai.core.errors import ProviderError, ProviderUnavailableError
 from sobai.core.redaction import redact
+from sobai.core.retry import is_retryable_http
 
 from .base import Provider
 
-
-def is_retryable_http(exc: Exception) -> bool:
-    """Classify an exception raised during an HTTP call as retryable or fatal."""
-    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError)):
-        return True
-    if isinstance(exc, httpx.HTTPStatusError):
-        status = exc.response.status_code
-        return status in (408, 409, 425, 429) or status >= 500
-    return False
+# Re-exported so provider adapters (and tests) can import it from here.
+__all__ = ["HttpProvider", "is_retryable_http"]
 
 
 class HttpProvider(Provider):

@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added — YouTube connector (read-only)
+- Installed-application OAuth 2.0 with loopback redirect, PKCE (S256), and state
+  validation; tokens stored only in the OS keyring and redacted everywhere.
+- Least-privilege scopes by default (`youtube.readonly`, `yt-analytics.readonly`);
+  `--monetary` and `--captions` are separate opt-ins (the latter a broad scope).
+- Official APIs only (Data API v3 + Analytics API v2) — never scrapes.
+- Commands: `connect/disconnect youtube`, `youtube channel`, `analytics`,
+  `compare`, `top`, `video`, `summarize`, `ideas`, `ask`.
+- Typed, read-only JSON-Schema tools power `youtube ask` via the bounded tool loop.
+- Feature-detection of unsupported metric/dimension combinations; unavailable
+  metrics (thumbnail impressions/CTR, new-vs-returning) reported, never fabricated.
+- Every report carries date range, timezone (Pacific), freshness, and query/source
+  metadata, with observed facts kept separate from labeled AI interpretation.
+- Caption/transcript precedence (authorized captions → user-supplied → local
+  workflow), with a clear message when no authorized transcript exists.
+- Cloud-egress consent + audit and `--local-only` enforcement for AI commands.
+- Setup guide and API-limitation docs in `docs/youtube.md`.
+- Neutral `core.retry` extracted so connectors and providers share retry/backoff
+  without importing each other.
+
 ### Added — Phase 1 secure core
 - Provider-neutral CLI `sobai` (Typer) with global `--provider/--model/--profile`,
   `--local-only`, `--dry-run`, `--apply`, `--json`, `--quiet`, `--no-color`.
