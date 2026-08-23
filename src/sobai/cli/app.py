@@ -45,7 +45,9 @@ from .youtube_cmd import youtube_app
 app = typer.Typer(
     name="sobai",
     help="SoBatista AI — One CLI. Any model. Your tools.",
-    no_args_is_help=True,
+    # Run the callback even with no subcommand so `sobai` can open an interactive
+    # session (in a TTY) or print actionable guidance (non-interactively).
+    invoke_without_command=True,
     add_completion=True,
     rich_markup_mode="rich",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -113,6 +115,13 @@ def main_callback(
     # Ensure the SQLite connection is closed when the command finishes, even
     # under the test runner (which invokes the callback but not main()).
     ctx.call_on_close(_ACTIVE_CTX.close)
+
+    # No subcommand → open the interactive session (TTY) or guide (non-TTY).
+    # `--help`/`--version` are handled eagerly by Click and never reach here.
+    if ctx.invoked_subcommand is None:
+        from .session import launch_or_guide
+
+        launch_or_guide(_ACTIVE_CTX)
 
 
 # -- small top-level commands defined inline -------------------------------

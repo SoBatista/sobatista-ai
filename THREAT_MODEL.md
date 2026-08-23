@@ -71,11 +71,23 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Generated shell wrappers forward `"$@"` / `$argv` verbatim, no `eval`
     (`cli/aliases.py`).
 
-## 6. Terminal escape injection
-- **Risk:** ANSI/OSC sequences in external text rewrite the screen, set the
-  window title, or spoof prompts.
-- **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS and stray control bytes;
-  Rich markup is escaped (`ui/console.py`). Covered by tests.
+## 6. Terminal escape / Unicode injection
+- **Risk:** ANSI/OSC sequences or Unicode bidirectional controls in external text
+  (or model output) rewrite the screen, set the window title, spoof prompts, or
+  visually reorder text (Trojan-Source).
+- **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS, stray C0/C1 control
+  bytes, **and Unicode bidi/format controls**; Rich markup is escaped
+  (`ui/console.py`). Applied to connector data and to interactive-session model
+  output (`cli/session.py`). Covered by tests.
+
+## 6a. Interactive session abuse
+- **Risk:** The chat session executes tools/shell, leaks identity, persists
+  secrets, or silently changes providers.
+- **Controls:** ✅ No connector tools/shell/Python/MCP/web/eval in the session
+  (`registry=None`); model output sanitized; conversation is in-memory only with
+  explicit bounds and no disk history; welcome screen shows no identity/paths/
+  secrets; `--local-only` hard-fails before cloud egress; no provider fallback;
+  session-only switches never rewrite persistent defaults (`cli/session.py`).
 
 ## 7. Excessive model tool loops
 - **Risk:** A runaway agent loops tools indefinitely (cost/DoS).

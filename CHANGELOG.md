@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added — interactive `sobai` session
+- Running `sobai` with no subcommand in an interactive terminal opens a polished,
+  provider-neutral chat session (Rich welcome screen; version/provider/model/
+  profile/local-only shown, no identity/paths/secrets). Non-interactive
+  invocations never hang — they print actionable `sobai ask` guidance; `--help`
+  and `--version` never launch the session; `--json` with no subcommand is
+  refused with guidance.
+- Multi-turn in-memory conversation with explicit context bounds (never
+  persisted); reuses existing providers, aliases, profiles, policy, streaming,
+  usage/audit accounting, timeouts, retries, and cancellation. Slash commands:
+  `/help /status /provider[ NAME] /model[ NAME] /profile[ NAME] /usage /clear
+  /exit /quit`. Session-only switches (never rewrite persistent defaults);
+  unknown commands are never sent to the model; empty input ignored; EOF exits;
+  Ctrl-C cancels a generation and, twice at idle, exits.
+- Never enables connector tools, never runs shell/Python/MCP/web/eval, never
+  silently falls back to another provider; model output is sanitized (ANSI/OSC/
+  control + Unicode bidi controls) before display. Line editing via stdlib
+  `readline` (in-memory only; no history written to disk).
+- `core.safeterm` now also strips Unicode bidirectional/format controls
+  (Trojan-Source class).
+
 ### Added — Notion connector (read-only)
 - Read-only Notion connector via the official API (`Notion-Version 2026-03-11`);
   the integration reads only content explicitly shared with it. Never scrapes;

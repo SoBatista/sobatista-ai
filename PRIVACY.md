@@ -57,6 +57,15 @@ sobai connections          # what is connected
 sobai disconnect <name>    # remove stored credentials
 ```
 
+## Interactive session
+
+The `sobai` interactive session keeps its conversation **in memory for the
+current process only** — the full conversation content is never written to disk,
+and command-line history is kept in memory only (no history file). Each turn is
+recorded in the local run history/usage log as metadata (provider, model, token
+counts, cost kind, a redacted short summary), the same as `sobai ask`. `/clear`
+drops the in-memory conversation immediately.
+
 ## Retention & deletion
 
 - Everything is on your machine. Delete `~/.config/sobai/`,

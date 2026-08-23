@@ -90,7 +90,13 @@ never writes secrets to disk. See [`docs/subscriptions.md`](docs/subscriptions.m
 ## Usage
 
 ```bash
-# Ask any provider
+# Interactive session (run in a terminal with no subcommand)
+sobai                        # opens a conversational session (/help for commands)
+sobai -p ollama -m qwen14b   # preselect a provider/model for the session
+sobai --local-only           # session that refuses any cloud egress
+# (non-interactive `sobai` prints guidance instead of hanging; use `sobai ask` in scripts)
+
+# Ask any provider (one-shot; ideal for automation)
 sobai ask "Explain this error"
 sobai ask --provider claude  "Review this architecture"
 sobai ask --provider openai  "Review this architecture"

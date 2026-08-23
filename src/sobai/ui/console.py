@@ -141,6 +141,20 @@ class UI:
         if not self.json_mode:
             self._out.rule(title, style="muted")
 
+    def panel(self, body: str, *, title: str | None = None) -> None:
+        """Render a bordered panel (text mode only). Body may contain Rich markup."""
+        if self.json_mode:
+            return
+        from rich.panel import Panel
+
+        self._out.print(Panel.fit(body, title=title, border_style="muted"))
+
     # -- prompts -----------------------------------------------------------
     def is_interactive(self) -> bool:
         return sys.stdin.isatty() and sys.stderr.isatty()
+
+    def stdout_is_tty(self) -> bool:
+        return sys.stdout.isatty()
+
+    def stdin_is_tty(self) -> bool:
+        return sys.stdin.isatty()
