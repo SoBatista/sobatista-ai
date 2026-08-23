@@ -39,6 +39,13 @@ Before connector data of a given class is sent to a cloud model, you are shown
 exactly what connector and class will leave — unless you have configured a
 persistent policy for that class in `config.toml` (`[policy.egress]`).
 
+**Notion** content is classified `internal` by default. `notion search`,
+`recent`, and `projects` are deterministic and never call a model; `summarize`,
+`weekly-review`, and `ask` send retrieved Notion content to the selected
+provider, subject to the egress rules above (local Ollama keeps it on-machine;
+`--local-only` hard-fails before any cloud disclosure). The Notion integration
+token lives only in your OS keyring. See [`docs/notion.md`](docs/notion.md).
+
 ## Controls
 
 ```bash

@@ -28,6 +28,7 @@ from .config_cmd import config_show, connections, privacy_explain
 from .doctor import doctor
 from .history_cmd import audit, history, runs_app
 from .init import init
+from .notion_cmd import notion_app
 from .profiles_cmd import profile_app
 from .providers_cmd import (
     connect_command,
@@ -180,6 +181,7 @@ app.add_typer(profile_app, name="profile")
 app.add_typer(runs_app, name="runs")
 app.add_typer(aliases_app, name="aliases")
 app.add_typer(youtube_app, name="youtube")
+app.add_typer(notion_app, name="notion")
 
 config_app = typer.Typer(help="Inspect configuration.", no_args_is_help=True)
 config_app.command("show")(config_show)

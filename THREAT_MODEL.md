@@ -21,16 +21,20 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
     (`connectors/youtube/oauth.py`).
 
 ## 2. Malicious Notion pages / documents
-- **Risk:** A page instructs the model to exfiltrate data or take actions.
+- **Risk:** A shared page instructs the model to exfiltrate data or take actions.
 - **Controls:**
-  - ✅ System posture: external content is data, not instructions
-    (`cli/ask.py` system prompt; enforced by design in the orchestrator).
-  - ✅ Retrieved content cannot enable tools or change policy (tools are an
-    explicit allowlist; `tools/base.py`, `core/orchestrator.py`).
+  - ✅ System posture: retrieved Notion content is untrusted data, not
+    instructions — it cannot change policy, enable tools, raise limits, request
+    secrets, or authorize writes (`cli/notion_cmd.py` system prompts; enforced by
+    the allowlisted-tool orchestrator, `tools/base.py`, `core/orchestrator.py`).
   - ✅ Terminal-escape sanitization on display (`core/safeterm.py`), applied to
-    untrusted YouTube titles/fields in `cli/youtube_cmd.py`.
-  - ✅ Connector data classified (INTERNAL) and egress-gated before reaching a
-    cloud model (`policies/engine.py`, enforced in the YouTube AI commands).
+    untrusted Notion titles/content in `cli/notion_cmd.py` (and YouTube fields).
+  - ✅ Notion data classified INTERNAL and egress-gated before reaching a cloud
+    model (`policies/engine.py`, enforced in the Notion/YouTube AI commands);
+    `--local-only` hard-fails first.
+  - ✅ Read-only: no Notion write endpoints are ever called; block traversal is
+    bounded with cycle/duplicate prevention; page refs accept only ids/notion.so
+    URLs (`connectors/notion/`).
 
 ## 3. Prompt injection from comments / issues
 - **Risk:** Attacker-controlled text in a GitHub/Jira comment steers the model.

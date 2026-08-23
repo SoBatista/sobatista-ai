@@ -185,6 +185,11 @@ def connect_command(
 
         connect_youtube(app, monetary=monetary, captions=captions, no_browser=no_browser)
         return
+    if name == "notion":
+        from .notion_cmd import connect_notion
+
+        connect_notion(app)
+        return
     if name in KNOWN_CONNECTORS:
         raise NotFoundError(
             f"Connector '{name}' setup is not available in this build yet.",
@@ -220,6 +225,11 @@ def disconnect_command(
         from .youtube_cmd import disconnect_youtube
 
         disconnect_youtube(app)
+        return
+    if name == "notion":
+        from .notion_cmd import disconnect_notion
+
+        disconnect_notion(app)
         return
     if name in KNOWN_CONNECTORS:
         raise NotFoundError(

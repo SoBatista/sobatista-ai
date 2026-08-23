@@ -80,6 +80,18 @@ sobai update --yes             # skip the confirmation prompt
 `uv tool install --force` and verifies the result — using safe argv arrays only,
 and never running `git`, fetching remote code, or publishing anything.
 
+## Connect your tools (read-only)
+
+```bash
+sobai connect youtube      # YouTube analytics — see docs/youtube.md
+sobai connect notion       # Notion (integration token via hidden prompt) — see docs/notion.md
+sobai notion search "roadmap"
+sobai notion weekly-review --provider claude
+```
+
+Notion reads only pages/databases you explicitly share with your integration;
+the token is stored only in your OS keyring.
+
 ## Handy extras
 
 ```bash

@@ -41,7 +41,7 @@ implemented and working:
 | `--local-only` enforcement + cloud-egress consent + audit | ✅ working |
 | Shell wrappers (`sobai aliases install …`) | ✅ working |
 | **YouTube connector** (read-only analytics via OAuth) | ✅ working |
-| Connector: Notion (read-only) | 🚧 next |
+| **Notion connector** (read-only search / pages / weekly-review) | ✅ working |
 | Natural-language → typed plan routing, MCP server | 🚧 next |
 | Write actions (`--apply`), GitHub/Jira/website connectors | 🔭 roadmap |
 
@@ -127,6 +127,13 @@ sobai youtube top --period 90d --metric watch-time --limit 10
 sobai youtube compare --period 30d --previous
 sobai youtube ask --provider claude "Explain my last 30 days"
 
+# Notion (read-only, official API — see docs/notion.md for setup)
+sobai connect notion                       # integration token (hidden prompt) -> keyring
+sobai notion search "roadmap"
+sobai notion recent --since 7d
+sobai notion weekly-review --provider claude
+sobai notion ask --provider claude "What did I work on this week?"
+
 # Privacy controls
 sobai --local-only ask "..."        # hard-fails if anything would leave the machine
 sobai privacy explain
@@ -205,9 +212,10 @@ filenames.
 
 ## Roadmap
 
-- **Now:** YouTube read-only analytics via OAuth ([setup & limitations](docs/youtube.md)).
-- **Next:** Notion (read-only search & weekly review), natural-language plan
-  routing, MCP server, GitHub/Jira.
+- **Now:** YouTube read-only analytics ([docs](docs/youtube.md)) and Notion
+  read-only search/pages/weekly-review ([docs](docs/notion.md)).
+- **Next:** natural-language plan routing (`--dry-run`/`explain-plan`), MCP
+  server, GitHub/Jira.
 - **Later:** controlled writes behind `--apply` with preview/confirmation.
 
 ## Contributing

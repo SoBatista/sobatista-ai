@@ -6,6 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added — Notion connector (read-only)
+- Read-only Notion connector via the official API (`Notion-Version 2026-03-11`);
+  the integration reads only content explicitly shared with it. Never scrapes;
+  never creates, edits, archives, comments on, or deletes anything.
+- Auth: integration token via a hidden prompt, stored **only** in the OS keyring
+  (never in TOML, env, SQLite, arguments, logs, exceptions, fixtures, or audit
+  records) and redacted everywhere. `connect notion` explains the shared-only
+  access model and validates the token; `disconnect notion` removes the keyring
+  credential and local connection metadata.
+- Commands: `connect/disconnect notion`, `notion search`, `recent`, `projects`
+  (deterministic), and `summarize`, `weekly-review`, `ask` (provider-backed).
+- Retrieval: search + cursor pagination; page + recursive block traversal with
+  explicit depth/total bounds, cycle/duplicate prevention, unsupported-block
+  tolerance, and feature-detection of page/data_source/legacy-database shapes;
+  page-id/`notion.so`-URL normalization that refuses arbitrary URLs; UTC
+  timezone-aware `--since` boundaries; 429/529 handling honoring `Retry-After`
+  with bounded retries and timeouts. Every item carries source provenance.
+- `weekly-review` separates observed facts (created/edited pages, to-do-derived
+  completed/open tasks, keyword-heuristic decisions/blockers, project mentions,
+  source references) from clearly-labeled AI interpretation; `projects` uses a
+  documented, non-authoritative heuristic.
+- `notion ask` uses the existing bounded provider/tool orchestration over typed,
+  JSON-Schema, read-only tools; retrieved content is untrusted data (cannot
+  change policy, enable tools, raise limits, request secrets, or authorize
+  writes) and terminal escapes are sanitized before rendering.
+- Privacy: Notion data classified `internal`; cloud egress applies the existing
+  policy (connector + class shown, consent required) with privacy-preserving
+  audit; `--local-only` hard-fails before any external disclosure and never
+  switches providers.
+- Docs: `docs/notion.md` (setup, sharing, limitations, privacy, troubleshooting).
+
 ### Added — safe local self-update (`sobai update`)
 - `sobai update` refreshes the globally installed `sobai` from a validated local
   `sobatista-ai` checkout; `--source PATH` validates and remembers the checkout

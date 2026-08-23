@@ -55,6 +55,18 @@ Do **not** include real credentials or tokens in a report.
 ### No silent fallback
 - SoBatista AI never silently switches providers (e.g. local → cloud) on error.
 
+### Notion connector (read-only)
+- The integration token is entered via a hidden prompt and stored **only** in the
+  OS keyring — never in TOML, env, SQLite, arguments, logs, exceptions, fixtures,
+  shell history, or audit records — and is redacted from all output. The
+  integration can read only content explicitly shared with it; Phase 1 performs
+  no writes of any kind.
+- Retrieved Notion content is treated as untrusted data: it cannot change policy,
+  enable tools, raise limits, request secrets, or authorize writes, and terminal
+  escape sequences are stripped before display. Page references accept only ids
+  or `notion.so` URLs (arbitrary URLs are refused). Traversal is bounded with
+  cycle/duplicate prevention; rate limits are handled with `Retry-After`.
+
 ### Self-update (`sobai update`)
 - Updates only from a **local checkout you point it at**, validated by reading
   `pyproject.toml` and confirming the project name is `sobatista-ai`; missing,

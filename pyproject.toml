@@ -91,8 +91,9 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B011", "RUF012"]
-# Constant names contain "token"/"endpoint"; these are URLs/keys, not secrets.
+# Constant names contain "token"/"endpoint"; these are keyring key names, not secrets.
 "src/sobai/connectors/youtube/oauth.py" = ["S105"]
+"src/sobai/connectors/notion/auth.py" = ["S105"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["sobai"]
