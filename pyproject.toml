@@ -4,6 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sobatista-ai"
+# Single authoritative version source. Release Please bumps this (and the
+# source-checkout fallback in src/sobai/__init__.py) via a reviewed release PR.
 version = "0.1.0.dev0"
 description = "One CLI. Any model. Your tools. A provider-neutral AI command-line interface."
 readme = "README.md"
@@ -33,11 +35,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sobatistacyber/sobatista-ai"
-Repository = "https://github.com/sobatistacyber/sobatista-ai"
-Documentation = "https://github.com/sobatistacyber/sobatista-ai#readme"
-Changelog = "https://github.com/sobatistacyber/sobatista-ai/blob/main/CHANGELOG.md"
-Issues = "https://github.com/sobatistacyber/sobatista-ai/issues"
+Homepage = "https://github.com/SoBatista/sobatista-ai"
+Repository = "https://github.com/SoBatista/sobatista-ai"
+Documentation = "https://github.com/SoBatista/sobatista-ai#readme"
+Changelog = "https://github.com/SoBatista/sobatista-ai/blob/main/CHANGELOG.md"
+Issues = "https://github.com/SoBatista/sobatista-ai/issues"
 
 [project.scripts]
 sobai = "sobai.cli.app:main"
@@ -114,8 +116,10 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra --strict-markers --cov=sobai --cov-report=term-missing --cov-fail-under=80"
+addopts = "-ra --strict-markers --cov=sobai --cov-report=term-missing --cov-fail-under=85"
 testpaths = ["tests"]
+# Allow tests to import the CI/release helper modules under scripts/.
+pythonpath = ["."]
 asyncio_mode = "auto"
 markers = [
     "live: opt-in tests that call real external services (skipped by default)",

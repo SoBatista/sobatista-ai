@@ -9,9 +9,16 @@ data) through strict, dependency-injected interfaces.
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
+
 __all__ = ["__version__"]
 
-# Kept in sync with pyproject via the release workflow. The source of truth for
-# a built distribution is the package metadata; this constant is the fallback
-# used for `sobai --version` when running from a source checkout.
-__version__ = "0.1.0.dev0"
+# The single authoritative version is the installed package metadata (built from
+# pyproject's [project].version). This constant is only the source-checkout
+# fallback when the package is not installed; Release Please keeps it in sync.
+_FALLBACK_VERSION = "0.1.0.dev0"  # x-release-please-version
+
+try:
+    __version__ = version("sobatista-ai")
+except PackageNotFoundError:  # pragma: no cover - only when running uninstalled
+    __version__ = _FALLBACK_VERSION

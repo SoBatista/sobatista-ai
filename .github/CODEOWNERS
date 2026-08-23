@@ -1,9 +1,29 @@
-# Default owner for everything in this repo.
-* @sobatistacyber
+# Code owners. Handles here MUST have write access to the repo (see MAINTAINERS.md);
+# GitHub silently ignores unknown owners. Owner review is enforced via branch
+# protection (see docs/repo-settings-checklist.md).
 
-# Security-sensitive areas warrant extra care on review.
-/src/sobai/auth/        @sobatistacyber
-/src/sobai/policies/    @sobatistacyber
-/src/sobai/core/redaction.py @sobatistacyber
-/SECURITY.md            @sobatistacyber
-/THREAT_MODEL.md        @sobatistacyber
+# Default owner for everything in this repo.
+*                               @sobatistacyber
+
+# Security-sensitive source areas warrant extra care on review.
+/src/sobai/auth/                @sobatistacyber
+/src/sobai/policies/            @sobatistacyber
+/src/sobai/core/redaction.py    @sobatistacyber
+/src/sobai/core/safeterm.py     @sobatistacyber
+
+# CI / supply chain / release automation.
+/.github/                       @sobatistacyber
+/.github/workflows/             @sobatistacyber
+/.github/CODEOWNERS             @sobatistacyber
+/.github/dependabot.yml         @sobatistacyber
+/scripts/                       @sobatistacyber
+/release-please-config.json     @sobatistacyber
+/.release-please-manifest.json  @sobatistacyber
+/pyproject.toml                 @sobatistacyber
+
+# Security & governance documentation.
+/SECURITY.md                    @sobatistacyber
+/THREAT_MODEL.md                @sobatistacyber
+/RELEASING.md                   @sobatistacyber
+/GOVERNANCE.md                  @sobatistacyber
+/MAINTAINERS.md                 @sobatistacyber

@@ -1,5 +1,11 @@
 name: CI
 
+# Continuous integration: lint, strict types, tests (no live APIs, no real
+# credentials), distribution build + metadata validation, install smoke tests
+# for both artifacts and both installers, strict docs build, and lockfile
+# consistency. All third-party actions are pinned to full commit SHAs; Dependabot
+# (see .github/dependabot.yml) proposes updates to those pins.
+
 on:
   push:
     branches: [main]
@@ -7,9 +13,10 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege by default; individual jobs do not need more.
 permissions:
   contents: read
 
@@ -17,15 +24,19 @@ jobs:
   quality:
     name: Lint, type-check, test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           enable-cache: true
 
@@ -38,26 +49,156 @@ jobs:
       - name: Ruff (format)
         run: uv run ruff format --check .
 
-      - name: mypy
+      - name: mypy (strict)
         run: uv run mypy
 
-      - name: pytest
-        # CI must never call live external APIs; the default run excludes the
-        # opt-in `live` marker and uses no real credentials.
+      - name: pytest (branch coverage; no live external APIs)
+        # The default run excludes the opt-in `live` marker and uses no real
+        # credentials, keyring, or network. The coverage floor is enforced by
+        # pyproject's --cov-fail-under and may only be raised, never lowered.
+        env:
+          # Fail fast if any test unexpectedly reaches for a real config/state.
+          SOBAI_CONFIG_DIR: ${{ runner.temp }}/sobai-config
+          SOBAI_DATA_DIR: ${{ runner.temp }}/sobai-data
+          SOBAI_CACHE_DIR: ${{ runner.temp }}/sobai-cache
         run: uv run pytest -q
 
   build:
     name: Build distribution
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
       - name: Build sdist + wheel
         run: uv build
-      - name: Check metadata
-        run: uv run --with twine twine check dist/*
-      - uses: actions/upload-artifact@v4
+
+      - name: Validate distribution metadata
+        run: uv run --with twine twine check --strict dist/*
+
+      - name: Reproducibility probe (informational)
+        # Best-effort: rebuild with a pinned SOURCE_DATE_EPOCH and compare
+        # hashes. Not fatal — surfaced so drift is visible, not silently ignored.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sha256sum dist/*.whl dist/*.tar.gz | sort > /tmp/build-1.txt
+          rm -rf dist
+          SOURCE_DATE_EPOCH=315532800 uv build
+          sha256sum dist/*.whl dist/*.tar.gz | sort > /tmp/build-2.txt
+          if diff -u /tmp/build-1.txt /tmp/build-2.txt; then
+            echo "Build is reproducible for these settings."
+          else
+            echo "::notice::Build differs across runs; reproducibility not guaranteed."
+          fi
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: dist/*
+          if-no-files-found: error
+
+  install-smoke:
+    name: Install smoke (${{ matrix.installer }})
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        installer: [pip-wheel, pip-sdist, uv-tool, pipx]
+    steps:
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Download distribution
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Install the built artifact
+        run: |
+          set -euo pipefail
+          WHEEL=$(ls dist/*.whl)
+          SDIST=$(ls dist/*.tar.gz)
+          case "${{ matrix.installer }}" in
+            pip-wheel)
+              python -m venv .venv && . .venv/bin/activate
+              python -m pip install --upgrade pip
+              python -m pip install "$WHEEL"
+              echo "SMOKE=.venv/bin/sobai" >> "$GITHUB_ENV" ;;
+            pip-sdist)
+              python -m venv .venv && . .venv/bin/activate
+              python -m pip install --upgrade pip
+              python -m pip install "$SDIST"
+              echo "SMOKE=.venv/bin/sobai" >> "$GITHUB_ENV" ;;
+            uv-tool)
+              python -m pip install --upgrade uv
+              uv tool install "$WHEEL"
+              echo "SMOKE=$HOME/.local/bin/sobai" >> "$GITHUB_ENV" ;;
+            pipx)
+              python -m pip install --upgrade pipx
+              python -m pipx install "$WHEEL"
+              echo "SMOKE=$HOME/.local/bin/sobai" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Smoke-test the installed CLI
+        # No credentials, keyring, or network. Interactive launch is exercised in
+        # non-TTY mode, which must print guidance and exit without hanging.
+        env:
+          SOBAI_CONFIG_DIR: ${{ runner.temp }}/sobai-config
+          SOBAI_DATA_DIR: ${{ runner.temp }}/sobai-data
+          SOBAI_CACHE_DIR: ${{ runner.temp }}/sobai-cache
+        run: |
+          set -euo pipefail
+          "$SMOKE" --version
+          "$SMOKE" --help >/dev/null
+          "$SMOKE" ask --help >/dev/null
+          "$SMOKE" providers list >/dev/null
+          # Non-TTY, no subcommand: must not hang; prints actionable guidance.
+          timeout 30 "$SMOKE" </dev/null >/dev/null
+
+  docs:
+    name: Docs (mkdocs strict) + link check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Build documentation (strict)
+        run: uv run --extra docs mkdocs build --strict
+
+      - name: Check internal documentation links (offline)
+        run: uv run python scripts/check_doc_links.py
+
+  lockfile:
+    name: Lockfile consistency
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Verify uv.lock matches pyproject
+        run: uv lock --check

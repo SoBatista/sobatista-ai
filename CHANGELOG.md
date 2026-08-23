@@ -6,6 +6,38 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed — canonical repository URL
+- Corrected the canonical repository URL to `https://github.com/SoBatista/sobatista-ai`
+  across package metadata (`pyproject` project URLs), clone instructions, issue
+  configuration, and documentation. The previous `sobatistacyber/...` URL was
+  wrong.
+
+### Added — OSS release, CI, and supply-chain hardening
+- **Versioning:** single authoritative version source (`pyproject` +
+  `importlib.metadata` at runtime); documented SemVer↔PEP 440 lifecycle
+  (alpha/beta/rc/stable), pre-1.0 compatibility, deprecation, supported Pythons,
+  security support, and rollback/yank in `RELEASING.md`. **This build is
+  `0.1.0.dev0` — not a stable `0.1.0`.**
+- **Release automation (prepared, inert):** Release Please prepares release PRs
+  (version + changelog); a separate, prepared-but-inert `release.yml` publishes on
+  a published GitHub Release via **PyPI Trusted Publishing (OIDC)** — no
+  long-lived token — from a protected `pypi` environment, with tag↔version check,
+  `twine check`, both-artifact smoke installs, SHA-256 checksums, a CycloneDX
+  SBOM, signed build-provenance + PEP 740 attestations, and idempotent
+  re-runs. No tag/release is created by this change.
+- **PR release-impact** validation (exactly one of major/minor/patch/none).
+- **CI hardening:** lint, strict types, branch-coverage tests (floor raised to
+  85%), build + metadata validation, install smoke tests (wheel/sdist × pip/uv
+  tool/pipx, incl. non-TTY launch), strict MkDocs build, offline doc-link check,
+  and lockfile consistency. All third-party Actions pinned to full commit SHAs.
+- **Security automation:** `actionlint` + `zizmor` workflow audits, deterministic
+  offline secret scan, runtime license policy, retained CodeQL, Dependency Review
+  (with copyleft denylist), and OpenSSF Scorecard (SARIF).
+- **Repo standards:** `RELEASING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`,
+  `SUPPORT.md`, `CITATION.cff`, ADR-0004/0005, provider/connector authoring
+  guides, a maintainer settings-handoff checklist, structured issue forms,
+  expanded CODEOWNERS, and real status badges.
+
 ### Added — interactive `sobai` session
 - Running `sobai` with no subcommand in an interactive terminal opens a polished,
   provider-neutral chat session (Rich welcome screen; version/provider/model/

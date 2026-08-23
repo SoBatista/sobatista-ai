@@ -1,0 +1,75 @@
+name: Bug report
+description: Report a problem with sobai
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Never paste API keys, tokens, or other secrets.**
+        `sobai` redacts its own output; use `sobai config show --redacted` and
+        double-check anything copied from elsewhere. Security vulnerabilities must
+        be reported privately — see SECURITY.md, not this form.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands. Redact any sensitive values.
+      render: bash
+      placeholder: sobai ask "..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: sobai --version
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: sobai doctor output (redacted)
+      description: Paste the relevant part of `sobai doctor`. Redact as needed.
+      render: text
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: OS / distro and Python version
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install method
+      options:
+        - uv tool
+        - pipx
+        - from source
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Redacted logs, a `sobai config show --redacted` snippet, etc.
+    validations:
+      required: false
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have not included any secrets, API keys, or tokens.
+          required: true
+        - label: This is not a security vulnerability (those go to SECURITY.md).
+          required: true

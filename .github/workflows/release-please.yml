@@ -1,0 +1,32 @@
+name: Release Please
+
+# Prepares releases only: maintains a "release PR" that bumps the version and
+# updates the changelog from Conventional Commits. Merging that PR is what tags
+# and creates the GitHub Release (which in turn triggers release.yml). This
+# workflow never publishes to PyPI and, on its own, creates no tag.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create/update the release PR, tag, and GitHub Release
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          # A PAT (or GitHub App token) is required so that the Release created
+          # when the release PR merges triggers release.yml; the built-in
+          # GITHUB_TOKEN cannot trigger further workflow runs. Falls back to
+          # GITHUB_TOKEN (release PR still works; publishing must then be run
+          # manually via release.yml's workflow_dispatch). See RELEASING.md.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

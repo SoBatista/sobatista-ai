@@ -2,6 +2,11 @@
 
 **One CLI. Any model. Your tools.**
 
+[![CI](https://github.com/SoBatista/sobatista-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/SoBatista/sobatista-ai/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SoBatista/sobatista-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/SoBatista/sobatista-ai/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
+
 `sobai` is a provider-neutral AI command-line interface. It is *not* a model
 runtime — it is a clean, secure orchestration layer that connects the models you
 already use (Anthropic Claude, OpenAI, local Ollama, and optionally the Claude
@@ -65,7 +70,7 @@ pipx install sobatista-ai
 For local development:
 
 ```bash
-git clone https://github.com/sobatistacyber/sobatista-ai
+git clone https://github.com/SoBatista/sobatista-ai
 cd sobatista-ai
 uv sync --group dev
 uv run sobai --help
