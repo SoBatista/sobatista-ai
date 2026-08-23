@@ -182,14 +182,14 @@ def _render_detected(app, ollama_models, claude, codex) -> None:  # type: ignore
         "Anthropic API",
         "configured"
         if app.creds.has(cred_key("anthropic"))
-        else "not configured — separate usage billing",
+        else "not configured — separate metered billing",
     )
     line(
         app.creds.has(cred_key("openai")),
         "OpenAI API",
         "configured"
         if app.creds.has(cred_key("openai"))
-        else "not configured — separate usage billing",
+        else "not configured — separate metered billing",
     )
 
 

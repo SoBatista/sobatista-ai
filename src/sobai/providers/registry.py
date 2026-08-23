@@ -63,7 +63,7 @@ def billing_mode(provider: str) -> str:
         return "local"
     if canon in CLI_BRIDGE_PROVIDERS:
         return "subscription"
-    return "metered API"
+    return "metered-api"
 
 
 def resolve_model_ref(

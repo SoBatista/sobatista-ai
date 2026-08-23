@@ -32,7 +32,7 @@ _NOTES = [
     "claude-cli: 'subscription'; any cost is an API-equivalent client estimate, "
     "not billed to the subscription.",
     "codex-cli: 'subscription'; token usage recorded, no monetary cost.",
-    "metered API: costs (when shown) are estimates.",
+    "metered-api: costs (when shown) are estimates.",
     "ollama: 'local'; API cost $0 (excludes hardware/electricity).",
     "Provider billing dashboards remain authoritative.",
 ]
@@ -75,6 +75,7 @@ def usage_command(
     for r in rows:
         cost = r.get("cost_usd")
         cost_cell = f"${cost:.4f} (est)" if cost is not None else "—"
+        dur_s = (r.get("duration_ms") or 0) / 1000
         table_rows.append(
             [
                 r.get("provider") or "-",
@@ -84,12 +85,25 @@ def usage_command(
                 str(r.get("cached_input_tokens", 0)),
                 str(r.get("output_tokens", 0)),
                 str(r.get("reasoning_tokens", 0)),
+                str(r.get("tool_rounds", 0)),
+                f"{dur_s:.1f}s",
                 cost_cell,
             ]
         )
     app.ui.table(
         f"Usage{f' since {period}' if period else ''}",
-        ["provider", "billing", "runs", "input", "cached-in", "output", "reasoning", "cost"],
+        [
+            "provider",
+            "billing",
+            "runs",
+            "input",
+            "cached-in",
+            "output",
+            "reasoning",
+            "tool-rounds",
+            "duration",
+            "cost",
+        ],
         table_rows,
     )
     for note in _NOTES:

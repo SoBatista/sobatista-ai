@@ -448,20 +448,28 @@ def ask_cmd(
     connector = _connector(app)
     provider, provider_name, model_id = _prepare_cloud(app)
     registry = connector.tools()
+    from sobai.providers.registry import billing_mode
+
+    from .common import cost_accounting, recorded_model
+
     run_id = uuid.uuid4().hex
     app.db.start_run(
         run_id,
         command="youtube ask",
         provider=provider_name,
-        model=model_id,
+        model=recorded_model(model_id),
         local_only=app.policy.local_only,
+        auth_mode=billing_mode(provider_name),
         summary=text[:200],
     )
     params = GenerateParams(
         model=model_id, system=YT_ASK_SYSTEM, messages=[Message.user(text)], max_tokens=1500
     )
 
-    async def _go() -> RunResult:
+    async def _go() -> tuple[RunResult, int]:
+        import time
+
+        started = time.monotonic()
         orch = Orchestrator(
             provider,
             registry=registry,
@@ -470,22 +478,30 @@ def ask_cmd(
             run_id=run_id,
         )
         try:
-            return await orch.run(params, stream=False)
+            result = await orch.run(params, stream=False)
+            return result, int((time.monotonic() - started) * 1000)
         finally:
             await provider.aclose()
             await connector.aclose()
 
     try:
-        result = run_async(_go())
+        result, duration_ms = run_async(_go())
     except SobaiError:
         app.db.finish_run(run_id, status="error", exit_code=1)
         raise
+    _mode, cost_usd, cost_kind = cost_accounting(provider_name, result.usage)
     app.db.finish_run(
         run_id,
         status="ok",
         exit_code=int(ExitCode.OK),
         input_tokens=result.usage.input_tokens,
         output_tokens=result.usage.output_tokens,
+        cached_input_tokens=result.usage.cached_input_tokens,
+        reasoning_tokens=result.usage.reasoning_tokens,
+        cost_usd=cost_usd,
+        cost_kind=cost_kind,
+        duration_ms=duration_ms,
+        tool_rounds=result.tool_rounds,
     )
     tool_calls = app.db.tool_calls_for(run_id)
     if app.ui.json_mode:

@@ -60,7 +60,7 @@ def test_cost_accounting_matrix() -> None:
         "estimated",
     )
     assert cost_accounting("codex-cli", Usage()) == ("subscription", None, "unavailable")
-    assert cost_accounting("anthropic", Usage()) == ("metered API", None, "unavailable")
+    assert cost_accounting("anthropic", Usage()) == ("metered-api", None, "unavailable")
 
 
 def test_ask_records_subscription_and_estimate(
@@ -81,6 +81,8 @@ def test_ask_records_subscription_and_estimate(
     assert run["cost_kind"] == "estimated"
     assert run["model"] == "provider-default"
     assert run["cached_input_tokens"] == 2
+    assert run["tool_rounds"] == 0  # plain ask uses no tools
+    assert run["duration_ms"] is not None  # duration recorded per run
 
 
 def test_ask_no_fallback_on_unavailable_bridge(

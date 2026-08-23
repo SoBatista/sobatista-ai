@@ -75,6 +75,8 @@ def runs_show(
         "cached_input_tokens",
         "output_tokens",
         "reasoning_tokens",
+        "tool_rounds",
+        "duration_ms",
         "cost_usd",
         "cost_kind",
         "started_at",

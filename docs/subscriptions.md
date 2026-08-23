@@ -115,7 +115,7 @@ and a cost figure labeled by how it was obtained:
 |----------|---------------|------|
 | `claude-cli` | `subscription` | `total_cost_usd` when returned, labeled an **API-equivalent client estimate** — *not* an amount billed to your subscription |
 | `codex-cli` | `subscription` | token usage recorded; **no monetary cost** (unavailable) |
-| `anthropic` / `openai` | `metered API` | any calculated cost is an **estimate** |
+| `anthropic` / `openai` | `metered-api` | any calculated cost is an **estimate** |
 | `ollama` | `local` | API cost **$0** (excludes hardware/electricity) |
 
 **Your provider's billing dashboard is always authoritative.**

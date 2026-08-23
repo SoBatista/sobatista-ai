@@ -86,6 +86,9 @@ def ask_command(
     streaming = not no_stream and app.ui.mode is OutputMode.TEXT
 
     async def _go() -> None:
+        import time
+
+        started = time.monotonic()
         orch = Orchestrator(provider, registry=None, db=app.db, run_id=run_id)
         try:
             if streaming:
@@ -107,6 +110,8 @@ def ask_command(
             reasoning_tokens=result.usage.reasoning_tokens,
             cost_usd=cost_usd,
             cost_kind=cost_kind,
+            duration_ms=int((time.monotonic() - started) * 1000),
+            tool_rounds=result.tool_rounds,
         )
 
         if app.ui.json_mode:

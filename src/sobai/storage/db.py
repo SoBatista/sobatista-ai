@@ -28,7 +28,7 @@ from typing import Any
 from sobai.core.classification import DataClass
 from sobai.core.redaction import redact
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Columns added after v1 (name -> column definition). Applied idempotently via
 # ALTER TABLE for databases created before they existed.
@@ -37,6 +37,10 @@ _RUNS_V2_COLUMNS = {
     "cached_input_tokens": "cached_input_tokens INTEGER",
     "reasoning_tokens": "reasoning_tokens INTEGER",
     "cost_kind": "cost_kind TEXT",
+}
+_RUNS_V3_COLUMNS = {
+    "duration_ms": "duration_ms INTEGER",
+    "tool_rounds": "tool_rounds INTEGER",
 }
 
 _SCHEMA = """
@@ -60,6 +64,8 @@ CREATE TABLE IF NOT EXISTS runs (
     cost_usd      REAL,
     cost_kind     TEXT,
     auth_mode     TEXT,
+    duration_ms   INTEGER,
+    tool_rounds   INTEGER,
     summary       TEXT
 );
 
@@ -146,12 +152,17 @@ class Database:
                 cur.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
                 return
             current = int(row["version"])
+            # Add columns to a pre-existing `runs` table (CREATE ... IF NOT EXISTS
+            # above won't alter it). ADD COLUMN is guarded by an existing-column
+            # check so migrations are idempotent and v1 -> v3 applies both steps.
+            pending: dict[str, str] = {}
             if current < 2:
-                # Add v2 columns to a pre-v2 `runs` table (CREATE ... IF NOT EXISTS
-                # above won't alter an existing table). ADD COLUMN is idempotent-safe
-                # when guarded by the existing-column check.
+                pending.update(_RUNS_V2_COLUMNS)
+            if current < 3:
+                pending.update(_RUNS_V3_COLUMNS)
+            if pending:
                 existing = {r["name"] for r in cur.execute("PRAGMA table_info(runs)")}
-                for name, ddl in _RUNS_V2_COLUMNS.items():
+                for name, ddl in pending.items():
                     if name not in existing:
                         cur.execute(f"ALTER TABLE runs ADD COLUMN {ddl}")
             if current != SCHEMA_VERSION:
@@ -212,12 +223,14 @@ class Database:
         reasoning_tokens: int | None = None,
         cost_usd: float | None = None,
         cost_kind: str | None = None,
+        duration_ms: int | None = None,
+        tool_rounds: int | None = None,
     ) -> None:
         with self._tx() as cur:
             cur.execute(
                 "UPDATE runs SET finished_at=?, status=?, exit_code=?, input_tokens=?, "
                 "output_tokens=?, cached_input_tokens=?, reasoning_tokens=?, cost_usd=?, "
-                "cost_kind=? WHERE id=?",
+                "cost_kind=?, duration_ms=?, tool_rounds=? WHERE id=?",
                 (
                     _now(),
                     status,
@@ -228,6 +241,8 @@ class Database:
                     reasoning_tokens,
                     cost_usd,
                     cost_kind,
+                    duration_ms,
+                    tool_rounds,
                     run_id,
                 ),
             )
@@ -251,6 +266,8 @@ class Database:
             f"COALESCE(SUM(output_tokens),0) AS output_tokens, "
             f"COALESCE(SUM(cached_input_tokens),0) AS cached_input_tokens, "
             f"COALESCE(SUM(reasoning_tokens),0) AS reasoning_tokens, "
+            f"COALESCE(SUM(tool_rounds),0) AS tool_rounds, "
+            f"COALESCE(SUM(duration_ms),0) AS duration_ms, "
             f"SUM(cost_usd) AS cost_usd "
             f"FROM runs WHERE {where} GROUP BY provider, auth_mode ORDER BY provider",
             params,

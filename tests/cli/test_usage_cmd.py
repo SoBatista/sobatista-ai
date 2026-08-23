@@ -36,6 +36,8 @@ def _seed(env: Paths) -> None:
         cached_input_tokens=20,
         cost_usd=0.0123,
         cost_kind="estimated",
+        duration_ms=1500,
+        tool_rounds=0,
     )
     db.start_run("r2", "ask", provider="ollama", model="qwen", auth_mode="local")
     db.finish_run(
@@ -70,6 +72,8 @@ def test_usage_json(runner: CliRunner, env: Paths) -> None:
     assert by_provider["claude-cli"]["auth_mode"] == "subscription"
     assert by_provider["codex-cli"]["cost_usd"] is None  # subscription, no cost invented
     assert by_provider["ollama"]["auth_mode"] == "local"
+    assert by_provider["claude-cli"]["duration_ms"] == 1500
+    assert "tool_rounds" in by_provider["claude-cli"]
     assert data["notes"]
 
 

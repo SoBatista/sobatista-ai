@@ -30,25 +30,42 @@ def test_v1_to_v2_adds_columns_and_preserves_rows(isolated_paths) -> None:
     conn.commit()
     conn.close()
 
-    db = Database(path)  # opening triggers migration
+    db = Database(path)  # opening triggers migration (v1 -> v3)
     cols = {r["name"] for r in db._conn.execute("PRAGMA table_info(runs)")}
-    assert {"auth_mode", "cached_input_tokens", "reasoning_tokens", "cost_kind"} <= cols
+    assert {
+        "auth_mode",
+        "cached_input_tokens",
+        "reasoning_tokens",
+        "cost_kind",
+        "duration_ms",
+        "tool_rounds",
+    } <= cols
 
     old = db.get_run("old-run")
     assert old is not None and old["command"] == "ask"  # preserved
 
     # New-schema writes work against the migrated table.
-    db.finish_run("old-run", status="ok", exit_code=0, cached_input_tokens=5, cost_kind="estimated")
+    db.finish_run(
+        "old-run",
+        status="ok",
+        exit_code=0,
+        cached_input_tokens=5,
+        cost_kind="estimated",
+        duration_ms=1200,
+        tool_rounds=2,
+    )
     updated = db.get_run("old-run")
     assert updated["cost_kind"] == "estimated"
     assert updated["cached_input_tokens"] == 5
+    assert updated["duration_ms"] == 1200
+    assert updated["tool_rounds"] == 2
     db.close()
 
 
-def test_fresh_db_is_v2(isolated_paths) -> None:
+def test_fresh_db_is_current(isolated_paths) -> None:
     db = Database(isolated_paths.state_db)
     version = db._conn.execute("SELECT version FROM schema_version").fetchone()["version"]
-    assert version == 2
+    assert version == 3
     cols = {r["name"] for r in db._conn.execute("PRAGMA table_info(runs)")}
-    assert "auth_mode" in cols
+    assert {"auth_mode", "duration_ms", "tool_rounds"} <= cols
     db.close()
