@@ -37,6 +37,7 @@ from .providers_cmd import (
     provider_app,
     providers_app,
 )
+from .usage_cmd import usage_command
 from .youtube_cmd import youtube_app
 
 app = typer.Typer(
@@ -164,6 +165,7 @@ app.command("connect")(connect_command)
 app.command("disconnect")(disconnect_command)
 app.command("connections")(connections)
 app.command("history")(history)
+app.command("usage")(usage_command)
 app.command("audit")(audit)
 app.command("update-check")(update_check)
 app.command("tools")(tools_list)

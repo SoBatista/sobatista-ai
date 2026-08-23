@@ -28,7 +28,16 @@ from typing import Any
 from sobai.core.classification import DataClass
 from sobai.core.redaction import redact
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# Columns added after v1 (name -> column definition). Applied idempotently via
+# ALTER TABLE for databases created before they existed.
+_RUNS_V2_COLUMNS = {
+    "auth_mode": "auth_mode TEXT",
+    "cached_input_tokens": "cached_input_tokens INTEGER",
+    "reasoning_tokens": "reasoning_tokens INTEGER",
+    "cost_kind": "cost_kind TEXT",
+}
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
@@ -46,7 +55,11 @@ CREATE TABLE IF NOT EXISTS runs (
     exit_code     INTEGER,
     input_tokens  INTEGER,
     output_tokens INTEGER,
+    cached_input_tokens INTEGER,
+    reasoning_tokens INTEGER,
     cost_usd      REAL,
+    cost_kind     TEXT,
+    auth_mode     TEXT,
     summary       TEXT
 );
 
@@ -131,6 +144,18 @@ class Database:
             row = cur.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
             if row is None:
                 cur.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
+                return
+            current = int(row["version"])
+            if current < 2:
+                # Add v2 columns to a pre-v2 `runs` table (CREATE ... IF NOT EXISTS
+                # above won't alter an existing table). ADD COLUMN is idempotent-safe
+                # when guarded by the existing-column check.
+                existing = {r["name"] for r in cur.execute("PRAGMA table_info(runs)")}
+                for name, ddl in _RUNS_V2_COLUMNS.items():
+                    if name not in existing:
+                        cur.execute(f"ALTER TABLE runs ADD COLUMN {ddl}")
+            if current != SCHEMA_VERSION:
+                cur.execute("UPDATE schema_version SET version=?", (SCHEMA_VERSION,))
 
     @contextmanager
     def _tx(self) -> Iterator[sqlite3.Cursor]:
@@ -154,12 +179,13 @@ class Database:
         model: str | None = None,
         profile: str | None = None,
         local_only: bool = False,
+        auth_mode: str | None = None,
         summary: str | None = None,
     ) -> None:
         with self._tx() as cur:
             cur.execute(
                 "INSERT INTO runs (id, started_at, command, provider, model, profile, "
-                "local_only, status, summary) VALUES (?,?,?,?,?,?,?,?,?)",
+                "local_only, auth_mode, status, summary) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (
                     run_id,
                     _now(),
@@ -168,6 +194,7 @@ class Database:
                     model,
                     profile,
                     int(local_only),
+                    auth_mode,
                     "running",
                     redact(summary) if summary else None,
                 ),
@@ -181,14 +208,54 @@ class Database:
         exit_code: int,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
+        cached_input_tokens: int | None = None,
+        reasoning_tokens: int | None = None,
         cost_usd: float | None = None,
+        cost_kind: str | None = None,
     ) -> None:
         with self._tx() as cur:
             cur.execute(
                 "UPDATE runs SET finished_at=?, status=?, exit_code=?, input_tokens=?, "
-                "output_tokens=?, cost_usd=? WHERE id=?",
-                (_now(), status, exit_code, input_tokens, output_tokens, cost_usd, run_id),
+                "output_tokens=?, cached_input_tokens=?, reasoning_tokens=?, cost_usd=?, "
+                "cost_kind=? WHERE id=?",
+                (
+                    _now(),
+                    status,
+                    exit_code,
+                    input_tokens,
+                    output_tokens,
+                    cached_input_tokens,
+                    reasoning_tokens,
+                    cost_usd,
+                    cost_kind,
+                    run_id,
+                ),
             )
+
+    def usage_summary(
+        self, *, since: str | None = None, provider: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Aggregate token/cost usage per (provider, auth_mode) for finished runs."""
+        clauses = ["status IS NOT NULL"]
+        params: list[Any] = []
+        if since:
+            clauses.append("started_at >= ?")
+            params.append(since)
+        if provider:
+            clauses.append("provider = ?")
+            params.append(provider)
+        where = " AND ".join(clauses)
+        rows = self._conn.execute(
+            f"SELECT provider, auth_mode, COUNT(*) AS runs, "  # noqa: S608 - fixed clause set
+            f"COALESCE(SUM(input_tokens),0) AS input_tokens, "
+            f"COALESCE(SUM(output_tokens),0) AS output_tokens, "
+            f"COALESCE(SUM(cached_input_tokens),0) AS cached_input_tokens, "
+            f"COALESCE(SUM(reasoning_tokens),0) AS reasoning_tokens, "
+            f"SUM(cost_usd) AS cost_usd "
+            f"FROM runs WHERE {where} GROUP BY provider, auth_mode ORDER BY provider",
+            params,
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     def list_runs(self, limit: int = 20) -> list[dict[str, Any]]:
         rows = self._conn.execute(

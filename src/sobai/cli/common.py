@@ -11,9 +11,31 @@ import typer
 
 from sobai.core.context import AppContext
 from sobai.core.errors import PolicyError
+from sobai.core.types import Usage
 from sobai.policies import EgressAction, EgressDecision
 from sobai.providers.base import Provider
-from sobai.providers.registry import build_provider
+from sobai.providers.cli_bridge import CLI_DEFAULT_MODEL
+from sobai.providers.registry import billing_mode, build_provider
+
+
+def recorded_model(model_id: str) -> str:
+    """Map the CLI-default sentinel to a readable label for run history."""
+    return "provider-default" if model_id == CLI_DEFAULT_MODEL else model_id
+
+
+def cost_accounting(provider_name: str, usage: Usage) -> tuple[str, float | None, str]:
+    """Return (auth/billing mode, cost_usd, cost_kind) for a run.
+
+    cost_kind is one of "actual" (local, $0), "estimated" (a provider-reported
+    client-side estimate), or "unavailable" (no monetary figure available — e.g.
+    Codex subscription, or a metered API we do not price locally).
+    """
+    mode = billing_mode(provider_name)
+    if mode == "local":
+        return mode, 0.0, "actual"
+    if usage.cost_usd is not None:
+        return mode, usage.cost_usd, "estimated"
+    return mode, None, "unavailable"
 
 
 def get_ctx(ctx: typer.Context) -> AppContext:

@@ -56,6 +56,16 @@ def cred_key(provider: str) -> str:
     return f"provider:{canonical_provider(provider)}:api_key"
 
 
+def billing_mode(provider: str) -> str:
+    """Human-readable billing/auth mode for a provider (no identity exposed)."""
+    canon = canonical_provider(provider)
+    if canon == "ollama":
+        return "local"
+    if canon in CLI_BRIDGE_PROVIDERS:
+        return "subscription"
+    return "metered API"
+
+
 def resolve_model_ref(
     config: Config,
     ref: str,

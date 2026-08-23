@@ -77,12 +77,15 @@ be installed and unlocked for credential storage. Run `sobai doctor` to check.
 ## Five-minute setup
 
 ```bash
-sobai init          # guided: stores API keys in the keyring, detects Ollama models
-sobai doctor        # verifies providers, keyring, and connectors
+sobai init          # detects your Claude Code / Codex subscriptions + Ollama first
+sobai doctor        # verifies providers, auth/billing mode, keyring, and connectors
 sobai ask "Explain this error"
 ```
 
-`init` never asks you to edit a config file, and never writes secrets to disk.
+`init` leads with **subscription-authenticated CLIs** (Claude Code, Codex) and
+local Ollama; direct Anthropic/OpenAI API access is an optional, clearly-labeled
+"separate metered billing" choice. It never asks you to edit a config file, and
+never writes secrets to disk. See [`docs/subscriptions.md`](docs/subscriptions.md).
 
 ## Usage
 
@@ -102,6 +105,14 @@ sobai models list
 sobai models discover --provider ollama
 sobai provider use claude
 sobai model use ollama:qwen2.5-coder:14b
+
+# Subscription CLIs (use the CLI's own login; no API key, no metered billing)
+sobai -p codex-cli  -m default ask "Hello"
+sobai -p claude-cli -m default ask "Hello"
+
+# Local usage & cost visibility (labeled actual / estimated / unavailable)
+sobai usage
+sobai usage --period 30d --provider claude-cli
 
 # Short flags and profiles
 sobai -p ollama -m qwen14b ask "..."

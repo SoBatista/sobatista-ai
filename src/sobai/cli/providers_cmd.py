@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import shutil
 from typing import Annotated
 
 import typer
 
+from sobai.core.context import AppContext
 from sobai.core.errors import ConfigError, NotFoundError
-from sobai.policies import is_local_provider
 from sobai.providers.registry import (
     ALL_PROVIDERS,
+    billing_mode,
     build_provider,
     canonical_provider,
     cred_key,
@@ -28,34 +28,41 @@ providers_app = typer.Typer(help="Inspect available model providers.", no_args_i
 models_app = typer.Typer(help="List and discover models and aliases.", no_args_is_help=True)
 
 
+def _auth_summary(app: AppContext, name: str) -> str:
+    """A short, non-identifying auth summary for a provider."""
+    from sobai.core.redaction import redact
+    from sobai.providers import cli_status
+
+    if name in API_KEY_PROVIDERS:
+        return "key stored" if app.creds.has(cred_key(name)) else "no key"
+    if name == "claude-cli":
+        return redact(cli_status.detect_claude_cli().detail)
+    if name == "codex-cli":
+        return redact(cli_status.detect_codex_cli().detail)
+    return "n/a"
+
+
 @providers_app.command("list")
 def providers_list(ctx: typer.Context) -> None:
-    """List configured providers and their status."""
+    """List configured providers with billing mode and authentication status."""
     app = get_ctx(ctx)
     cfg = app.config.config
     rows: list[list[str]] = []
     data: list[dict[str, object]] = []
     for name in ALL_PROVIDERS:
         pconf = cfg.providers.get(name)
-        local = is_local_provider(name)
-        if name in API_KEY_PROVIDERS:
-            has_cred = app.creds.has(cred_key(name))
-            cred = "yes" if has_cred else "no"
-        elif name.endswith("-cli"):
-            exe = "claude" if name == "claude-cli" else "codex"
-            cred = "installed" if shutil.which(exe) else "missing"
-        else:
-            cred = "n/a"
+        billing = billing_mode(name)
+        auth = _auth_summary(app, name)
         enabled = "yes" if (pconf.enabled if pconf else True) else "no"
         base = (pconf.base_url if pconf else None) or "-"
         default_model = (pconf.default_model if pconf else None) or "-"
-        rows.append([name, "local" if local else "cloud", enabled, cred, base, default_model])
+        rows.append([name, billing, enabled, auth, base, default_model])
         data.append(
             {
                 "name": name,
-                "kind": "local" if local else "cloud",
+                "billing_mode": billing,
                 "enabled": pconf.enabled if pconf else True,
-                "credential": cred,
+                "auth": auth,
                 "base_url": base,
                 "default_model": default_model,
             }
@@ -65,7 +72,7 @@ def providers_list(ctx: typer.Context) -> None:
         return
     app.ui.table(
         "Providers",
-        ["name", "type", "enabled", "credential", "base_url", "default_model"],
+        ["name", "billing", "enabled", "auth", "base_url", "default_model"],
         rows,
     )
     if cfg.active_provider:

@@ -12,7 +12,14 @@ from sobai.core.orchestrator import Orchestrator
 from sobai.core.types import GenerateParams, Message
 from sobai.ui import OutputMode
 
-from .common import get_ctx, read_prompt_arg, resolve_provider, run_async
+from .common import (
+    cost_accounting,
+    get_ctx,
+    read_prompt_arg,
+    recorded_model,
+    resolve_provider,
+    run_async,
+)
 
 SYSTEM_BASE = (
     "You are SoBatista AI, a careful assistant invoked from a command line. "
@@ -62,14 +69,17 @@ def ask_command(
         timeout_s=pconf.timeout_s if pconf else 120.0,
     )
 
+    from sobai.providers.registry import billing_mode
+
     run_id = uuid.uuid4().hex
     app.db.start_run(
         run_id,
         command="ask",
         provider=provider_name,
-        model=model_id,
+        model=recorded_model(model_id),
         profile=app.opts.profile or app.config.config.active_profile,
         local_only=app.policy.local_only,
+        auth_mode=billing_mode(provider_name),
         summary=text[:200],
     )
 
@@ -86,13 +96,17 @@ def ask_command(
         finally:
             await provider.aclose()
 
+        mode, cost_usd, cost_kind = cost_accounting(provider_name, result.usage)
         app.db.finish_run(
             run_id,
             status="ok",
             exit_code=int(ExitCode.OK),
             input_tokens=result.usage.input_tokens,
             output_tokens=result.usage.output_tokens,
-            cost_usd=result.usage.cost_usd,
+            cached_input_tokens=result.usage.cached_input_tokens,
+            reasoning_tokens=result.usage.reasoning_tokens,
+            cost_usd=cost_usd,
+            cost_kind=cost_kind,
         )
 
         if app.ui.json_mode:
@@ -100,7 +114,9 @@ def ask_command(
                 {
                     "run_id": run_id,
                     "provider": provider_name,
-                    "model": model_id,
+                    "model": recorded_model(model_id),
+                    "billing_mode": mode,
+                    "cost_kind": cost_kind,
                     "text": result.text,
                     "stop_reason": result.stop_reason,
                     "usage": result.usage.model_dump(),

@@ -94,6 +94,8 @@ class ToolCall(BaseModel):
 class Usage(BaseModel):
     input_tokens: int | None = None
     output_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
     cost_usd: float | None = None
 
     def merge(self, other: Usage) -> Usage:
@@ -105,6 +107,8 @@ class Usage(BaseModel):
         return Usage(
             input_tokens=_add(self.input_tokens, other.input_tokens),
             output_tokens=_add(self.output_tokens, other.output_tokens),
+            cached_input_tokens=_add(self.cached_input_tokens, other.cached_input_tokens),
+            reasoning_tokens=_add(self.reasoning_tokens, other.reasoning_tokens),
             cost_usd=_add_float(self.cost_usd, other.cost_usd),
         )
 

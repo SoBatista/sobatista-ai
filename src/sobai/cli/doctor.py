@@ -11,6 +11,7 @@ from sobai.core.errors import SobaiError
 from sobai.providers.base import ProviderHealth
 from sobai.providers.registry import (
     ALL_PROVIDERS,
+    billing_mode,
     build_provider,
     cred_key,
 )
@@ -70,7 +71,13 @@ def doctor(ctx: typer.Context) -> None:
                     "detail": keyring_status.detail,
                 },
                 "providers": [
-                    {"provider": h.provider, "ok": h.ok, "detail": h.detail, "models": h.models}
+                    {
+                        "provider": h.provider,
+                        "ok": h.ok,
+                        "billing_mode": billing_mode(h.provider),
+                        "detail": h.detail,
+                        "models": h.models,
+                    }
                     for h in healths
                 ],
                 "connectors": connectors,
@@ -90,7 +97,10 @@ def doctor(ctx: typer.Context) -> None:
     app.ui.rule("Providers")
     for h in healths:
         mark = "[success]✓[/success]" if h.ok else "[warn]•[/warn]"
-        app.ui.print(f"  {mark} [heading]{h.provider}[/heading]: {h.detail}")
+        app.ui.print(
+            f"  {mark} [heading]{h.provider}[/heading] "
+            f"[muted]({billing_mode(h.provider)})[/muted]: {h.detail}"
+        )
         if h.models:
             app.ui.print(f"    [muted]models: {', '.join(h.models)}[/muted]")
 
