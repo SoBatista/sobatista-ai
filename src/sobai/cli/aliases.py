@@ -17,12 +17,16 @@ from sobai.core.errors import ConfigError
 
 from .common import get_ctx
 
-# name -> the fixed sobai subcommand it wraps (natural-language args are appended).
-_WRAPPERS: dict[str, list[str]] = {
-    "yb-claude": ["youtube", "ask", "--provider", "claude"],
-    "yb-cx": ["youtube", "ask", "--provider", "openai"],
-    "notion-claude": ["notion", "ask", "--provider", "claude"],
-    "notion-cx": ["notion", "ask", "--provider", "openai"],
+# name -> (fixed sobai subcommand, use_separator).
+# use_separator=True inserts `--` before the forwarded args so a natural-language
+# prompt beginning with `-` is never parsed as an option. Wrappers that forward
+# *options* (e.g. sobai-update --check) set it False so options pass through.
+_WRAPPERS: dict[str, tuple[list[str], bool]] = {
+    "yb-claude": (["youtube", "ask", "--provider", "claude"], True),
+    "yb-cx": (["youtube", "ask", "--provider", "openai"], True),
+    "notion-claude": (["notion", "ask", "--provider", "claude"], True),
+    "notion-cx": (["notion", "ask", "--provider", "openai"], True),
+    "sobai-update": (["update"], False),
 }
 
 _SUPPORTED = ("bash", "zsh", "fish")
@@ -39,12 +43,14 @@ aliases_app = typer.Typer(help="Install safe shell wrappers for common workflows
 
 def _render(shell: str) -> str:
     lines = [_HEADER]
-    for name, argv in _WRAPPERS.items():
+    for name, (argv, sep) in _WRAPPERS.items():
         args = " ".join(argv)
         if shell == "fish":
-            lines.append(f"function {name}\n    command sobai {args} -- $argv\nend\n")
+            forward = f"{args} -- $argv" if sep else f"{args} $argv"
+            lines.append(f"function {name}\n    command sobai {forward}\nend\n")
         else:  # bash / zsh share POSIX function syntax
-            lines.append(f'{name}() {{\n    command sobai {args} -- "$@"\n}}\n')
+            forward = f'{args} -- "$@"' if sep else f'{args} "$@"'
+            lines.append(f"{name}() {{\n    command sobai {forward}\n}}\n")
     lines.append(_FOOTER)
     return "\n".join(lines)
 
@@ -57,7 +63,7 @@ def aliases_install(
         bool, typer.Option("--print", help="Print the wrappers instead of writing a file.")
     ] = False,
 ) -> None:
-    """Generate wrappers (yb-claude, yb-cx, notion-claude, notion-cx) for a shell."""
+    """Generate wrappers (yb-claude, yb-cx, notion-claude, notion-cx, sobai-update)."""
     app = get_ctx(ctx)
     shell = shell.lower()
     if shell not in _SUPPORTED:

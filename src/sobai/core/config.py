@@ -99,6 +99,9 @@ class Config(BaseModel):
     profiles: dict[str, ProfileConfig] = Field(default_factory=dict)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     connectors: dict[str, ConnectorMeta] = Field(default_factory=dict)
+    # Absolute path to a validated local sobatista-ai checkout used by
+    # `sobai update`. Non-secret; remembered after `sobai update --source PATH`.
+    update_source: str | None = None
 
     @classmethod
     def default(cls) -> Config:

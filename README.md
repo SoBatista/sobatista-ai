@@ -134,11 +134,32 @@ sobai audit
 sobai config show --redacted
 sobai connections
 
+# Keep the installed tool fresh after the checkout changes
+sobai update --source .     # validate + remember this checkout
+sobai update                # reuse the remembered checkout, from anywhere
+sobai update --check        # just check for a newer release
+
 # Safe shell shortcuts (no eval; args forwarded verbatim)
-sobai aliases install bash
+sobai aliases install bash  # yb-claude, yb-cx, notion-claude, notion-cx, sobai-update
 sobai aliases install zsh
 sobai aliases install fish
 ```
+
+### Keeping the installed tool updated
+
+When the local `sobatista-ai` checkout changes (e.g. after edits), refresh the
+globally installed `sobai` from it — no `git`, no network, no publishing:
+
+```bash
+cd /path/to/sobatista-ai
+sobai update --source .     # validates the checkout and remembers its path
+sobai update                # later runs reuse the remembered path
+```
+
+`update` validates the source (`pyproject.toml` project name must be
+`sobatista-ai`), builds it, reinstalls with `uv tool install --force`, and
+verifies the result — all via safe argv arrays (never a shell). The generated
+`sobai-update` wrapper simply forwards to `sobai update`.
 
 Everything supports `--json` for automation, plus `--quiet` and `--no-color`.
 

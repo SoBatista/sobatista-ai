@@ -55,6 +55,19 @@ Do **not** include real credentials or tokens in a report.
 ### No silent fallback
 - SoBatista AI never silently switches providers (e.g. local → cloud) on error.
 
+### Self-update (`sobai update`)
+- Updates only from a **local checkout you point it at**, validated by reading
+  `pyproject.toml` and confirming the project name is `sobatista-ai`; missing,
+  non-directory, root/overly-broad, or non-matching paths are refused and nothing
+  is changed.
+- Runs `uv` via **argv arrays** — never a shell string, `shell=True`, `eval`,
+  interpolation, or globs — with timeouts and redacted errors. The source is
+  built/validated before the installed tool is replaced, and the refreshed
+  executable is verified afterward.
+- Never runs `git`, fetches remote code, changes branches, discards local
+  changes, publishes, tags, or releases. Each update writes a privacy-preserving
+  audit event.
+
 ### Supply chain
 - Pinned, reviewed dependencies with automated updates.
 - CI runs linting, type-checking, tests, dependency review, and code scanning.

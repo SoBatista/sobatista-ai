@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added — safe local self-update (`sobai update`)
+- `sobai update` refreshes the globally installed `sobai` from a validated local
+  `sobatista-ai` checkout; `--source PATH` validates and remembers the checkout
+  (stored in config), so later `sobai update` works from anywhere.
+- `--check` delegates to the existing `update-check` logic and changes nothing;
+  `--yes` skips confirmation; JSON/quiet output stays machine-clean.
+- Validates the source by reading `pyproject.toml` and confirming the project
+  name is `sobatista-ai`; refuses missing, non-directory, root/overly-broad, or
+  non-sobatista-ai paths — and makes no changes when validation fails.
+- Requires `uv`; builds/validates the source (into a temp dir) before replacing
+  the tool with the argv-array equivalent of `uv tool install --force <abs>`,
+  then verifies the refreshed executable. Everything uses argv arrays — never a
+  shell string, `shell=True`, `eval`, interpolation, or globs — with timeouts,
+  sanitized errors, and a privacy-preserving audit event. Never runs `git`,
+  fetches remote code, changes branches, publishes, tags, or releases.
+- Meaningful exit codes: missing `uv` (11), invalid source (3), missing path
+  (9), build failure (12), declined (130), install/verify failure (13).
+- New optional `sobai-update` shell wrapper (bash/zsh/fish) via
+  `sobai aliases install` that only forwards args to `sobai update`.
+- Docs: `QUICKSTART.md`; README/SECURITY/THREAT_MODEL updated.
+
 ### Changed — subscription-authenticated CLI providers are first-class
 - `sobai init` now leads with detected **subscription** CLIs (Claude Code, Codex)
   and local Ollama; direct Anthropic/OpenAI API access is an optional advanced

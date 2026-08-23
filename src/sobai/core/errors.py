@@ -25,6 +25,9 @@ class ExitCode(IntEnum):
     TOOL_LIMIT = 8
     NOT_FOUND = 9
     TIMEOUT = 10
+    DEPENDENCY = 11
+    BUILD = 12
+    UPDATE = 13
     CANCELLED = 130
 
 
@@ -94,3 +97,27 @@ class OperationTimeout(SobaiError):
     """An operation exceeded its timeout budget."""
 
     exit_code = ExitCode.TIMEOUT
+
+
+class DependencyError(SobaiError):
+    """A required external tool (e.g. ``uv``) is unavailable."""
+
+    exit_code = ExitCode.DEPENDENCY
+
+
+class BuildError(SobaiError):
+    """Building/validating a source checkout failed."""
+
+    exit_code = ExitCode.BUILD
+
+
+class UpdateError(SobaiError):
+    """Installing or verifying the refreshed tool failed."""
+
+    exit_code = ExitCode.UPDATE
+
+
+class OperationDeclined(SobaiError):
+    """The user declined a confirmation prompt."""
+
+    exit_code = ExitCode.CANCELLED

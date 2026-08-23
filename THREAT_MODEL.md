@@ -87,6 +87,21 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
     audit record of each egress — wired through the YouTube AI commands
     (`cli/youtube_cmd.py` → `cli/common.py::enforce_egress`, `storage/db.py`).
 
+## 8a. Malicious or unintended self-update source
+- **Risk:** `sobai update` installs code from an attacker-controlled or wrong
+  path, or a crafted path triggers shell execution.
+- **Controls:**
+  - ✅ Source must be a directory whose `pyproject.toml` names project
+    `sobatista-ai`; missing / non-directory / root / overly-broad / non-matching
+    paths are refused, and **no change is made** on validation failure
+    (`cli/update_cmd.py::validate_source`).
+  - ✅ `uv` invoked via argv arrays (no shell / `eval` / interpolation / globs);
+    paths with spaces or shell metacharacters are passed literally. Timeouts and
+    redacted errors apply.
+  - ✅ Source is built/validated before the installed tool is replaced; the
+    refreshed executable is verified afterward; each update is audited.
+  - ✅ Never runs `git`, fetches remote code, changes branches, or publishes.
+
 ## 9. Dependency and release compromise
 - **Risk:** A malicious dependency or tampered release artifact.
 - **Controls:**

@@ -37,6 +37,7 @@ from .providers_cmd import (
     provider_app,
     providers_app,
 )
+from .update_cmd import update_command
 from .usage_cmd import usage_command
 from .youtube_cmd import youtube_app
 
@@ -168,6 +169,7 @@ app.command("history")(history)
 app.command("usage")(usage_command)
 app.command("audit")(audit)
 app.command("update-check")(update_check)
+app.command("update")(update_command)
 app.command("tools")(tools_list)
 
 app.add_typer(providers_app, name="providers")
