@@ -28,4 +28,5 @@ jobs:
       - name: Check exactly one release impact is selected
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: python scripts/check_release_impact.py

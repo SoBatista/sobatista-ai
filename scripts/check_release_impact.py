@@ -2,7 +2,8 @@
 """Validate that a pull request declares exactly one release impact.
 
 The PR body is read from the ``PR_BODY`` environment variable (never from the
-command line) so untrusted content cannot be interpreted as shell. Used by
+command line) so untrusted content cannot be interpreted as shell. The head
+branch is read from ``PR_HEAD_REF`` the same way. Used by
 ``.github/workflows/pr-release-impact.yml`` and unit-tested directly.
 """
 
@@ -13,6 +14,16 @@ import re
 import sys
 
 IMPACTS = ("major", "minor", "patch", "none")
+
+# Release Please composes its release-PR body from the changelog, so it can never
+# carry the template's checkboxes. Those PRs are exempt: their release impact is
+# already derived from the Conventional Commits they roll up.
+RELEASE_BRANCH_PREFIX = "release-please--"
+
+
+def is_release_pr(head_ref: str) -> bool:
+    """Return True when ``head_ref`` is a Release Please-generated branch."""
+    return head_ref.startswith(RELEASE_BRANCH_PREFIX)
 
 
 def selected_impacts(body: str) -> list[str]:
@@ -27,6 +38,10 @@ def selected_impacts(body: str) -> list[str]:
 
 
 def main() -> int:
+    head_ref = os.environ.get("PR_HEAD_REF", "")
+    if is_release_pr(head_ref):
+        print(f"Release Please PR ({head_ref}); impact comes from the commits it rolls up.")
+        return 0
     body = os.environ.get("PR_BODY", "")
     chosen = selected_impacts(body)
     if len(chosen) == 1:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from scripts.check_release_impact import selected_impacts
+from scripts.check_release_impact import is_release_pr, selected_impacts
 from scripts.check_version_tag import read_project_version, tag_matches
 from scripts.gen_checksums import SUMS_NAME, compute_checksums, render, write_sumfile
 
@@ -45,6 +45,25 @@ def test_selected_impacts_exactly_one() -> None:
 def test_selected_impacts_none() -> None:
     body = "- [ ] `major`\n- [ ] `minor`\n- [ ] `patch`\n- [ ] `none`\n"
     assert selected_impacts(body) == []
+
+
+@pytest.mark.parametrize(
+    "head_ref",
+    [
+        "release-please--branches--main",
+        "release-please--branches--main--components--sobatista-ai",
+    ],
+)
+def test_is_release_pr_true(head_ref: str) -> None:
+    assert is_release_pr(head_ref) is True
+
+
+@pytest.mark.parametrize(
+    "head_ref",
+    ["", "main", "feat/thing", "fix/release-please-notes"],
+)
+def test_is_release_pr_false(head_ref: str) -> None:
+    assert is_release_pr(head_ref) is False
 
 
 def test_selected_impacts_multiple() -> None:
