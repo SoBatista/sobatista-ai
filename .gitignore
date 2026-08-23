@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+
+# Environments
+.venv/
+venv/
+env/
+.python-version
+
+# uv — the lockfile IS committed for reproducible CI/builds.
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Docs
+site/
+
+# Local secrets / state — never commit these
+*.env
+.env
+.env.*
+!.env.example
+config.local.toml
+*.db
+*.sqlite
+*.sqlite3
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

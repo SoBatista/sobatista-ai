@@ -1,0 +1,9 @@
+# Default owner for everything in this repo.
+* @sobatistacyber
+
+# Security-sensitive areas warrant extra care on review.
+/src/sobai/auth/        @sobatistacyber
+/src/sobai/policies/    @sobatistacyber
+/src/sobai/core/redaction.py @sobatistacyber
+/SECURITY.md            @sobatistacyber
+/THREAT_MODEL.md        @sobatistacyber

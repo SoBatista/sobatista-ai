@@ -1,0 +1,79 @@
+# Example SoBatista AI configuration (~/.config/sobai/config.toml)
+#
+# This file NEVER contains secrets. API keys and OAuth tokens live in the OS
+# keyring — see `sobai connect` and `sobai init`. Model aliases below are
+# illustrative; real values are discovered or set via `sobai models discover`
+# and `sobai model use`, so this repo never ships current vendor model IDs.
+
+version = 1
+active_provider = "ollama"
+active_model = "qwen14b"     # a logical alias defined under [models]
+# active_profile = "creator"
+
+# --- Providers -------------------------------------------------------------
+[providers.anthropic]
+enabled = true
+base_url = "https://api.anthropic.com"
+timeout_s = 120.0
+max_tool_rounds = 6
+# default_model = "<set via `sobai models discover -p anthropic` then `model use`>"
+
+[providers.openai]
+enabled = true
+base_url = "https://api.openai.com/v1"
+timeout_s = 120.0
+max_tool_rounds = 6
+
+[providers.ollama]
+enabled = true
+base_url = "http://localhost:11434"
+timeout_s = 120.0
+max_tool_rounds = 6
+
+[providers.claude-cli]     # optional bridge to an installed Claude Code CLI
+enabled = true
+timeout_s = 120.0
+
+[providers.codex-cli]      # optional bridge to an installed Codex CLI
+enabled = true
+timeout_s = 120.0
+
+# --- Logical model aliases (alias -> "provider:model") ---------------------
+# Filled in by `sobai init` / `sobai model use`. Ollama ids may contain a colon.
+[models]
+qwen7b = "ollama:qwen2.5-coder:7b"
+qwen14b = "ollama:qwen2.5-coder:14b"
+qwen30b = "ollama:qwen3-coder:30b"
+# fast = "openai:<configured-model>"
+# deep = "openai:<configured-model>"
+# sonnet = "anthropic:<configured-model>"
+
+# --- Profiles (named bundles of provider/model/policy) ---------------------
+[profiles.creator]
+provider = "anthropic"
+model = "sonnet"
+
+[profiles.private]
+local_only = true
+provider = "ollama"
+model = "qwen14b"
+
+# --- Policy ----------------------------------------------------------------
+[policy]
+local_only = false
+max_tool_rounds = 6
+allowed_connectors = []     # empty = allow all known connectors
+
+# Per-classification egress policy: allow | ask | deny
+[policy.egress]
+public = "allow"
+internal = "ask"
+sensitive = "ask"
+restricted = "deny"
+
+# --- Connector metadata (NON-secret; tokens are in the keyring) ------------
+# Populated by `sobai connect <connector>`. Example shape only:
+# [connectors.notion]
+# account = "My Workspace"
+# scopes = ["read"]
+# connected_at = "2026-08-23T12:00:00Z"
