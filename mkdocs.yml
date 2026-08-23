@@ -1,0 +1,48 @@
+site_name: SoBatista AI
+site_description: One CLI. Any model. Your tools.
+repo_url: https://github.com/SoBatista/sobatista-ai
+repo_name: SoBatista/sobatista-ai
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Connectors:
+      - YouTube: youtube.md
+      - Notion: notion.md
+      - Subscription CLIs: subscriptions.md
+      - Screenshots: screenshots.md
+  - Extending:
+      - Authoring a provider: authoring-providers.md
+      - Authoring a connector: authoring-connectors.md
+  - Project:
+      - Repository settings handoff: repo-settings-checklist.md
+  - Architecture decisions:
+      - ADR-0001 Provider/connector separation: adr/0001-provider-connector-separation.md
+      - ADR-0002 Raw HTTPX providers: adr/0002-raw-httpx-providers.md
+      - ADR-0003 Keyring credentials: adr/0003-keyring-credentials.md
+      - ADR-0004 Versioning and releases: adr/0004-versioning-and-releases.md
+      - ADR-0005 Interactive session: adr/0005-interactive-session.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - toc:
+      permalink: true

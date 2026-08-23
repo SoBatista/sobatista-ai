@@ -39,6 +39,13 @@ Before connector data of a given class is sent to a cloud model, you are shown
 exactly what connector and class will leave — unless you have configured a
 persistent policy for that class in `config.toml` (`[policy.egress]`).
 
+**Notion** content is classified `internal` by default. `notion search`,
+`recent`, and `projects` are deterministic and never call a model; `summarize`,
+`weekly-review`, and `ask` send retrieved Notion content to the selected
+provider, subject to the egress rules above (local Ollama keeps it on-machine;
+`--local-only` hard-fails before any cloud disclosure). The Notion integration
+token lives only in your OS keyring. See [`docs/notion.md`](docs/notion.md).
+
 ## Controls
 
 ```bash
@@ -49,6 +56,15 @@ sobai config show --redacted
 sobai connections          # what is connected
 sobai disconnect <name>    # remove stored credentials
 ```
+
+## Interactive session
+
+The `sobai` interactive session keeps its conversation **in memory for the
+current process only** — the full conversation content is never written to disk,
+and command-line history is kept in memory only (no history file). Each turn is
+recorded in the local run history/usage log as metadata (provider, model, token
+counts, cost kind, a redacted short summary), the same as `sobai ask`. `/clear`
+drops the in-memory conversation immediately.
 
 ## Retention & deletion
 

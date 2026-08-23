@@ -15,7 +15,7 @@ welcome.
 ## Development setup
 
 ```bash
-git clone https://github.com/sobatistacyber/sobatista-ai
+git clone https://github.com/SoBatista/sobatista-ai
 cd sobatista-ai
 uv sync --group dev
 uv run sobai --help
@@ -40,17 +40,20 @@ uv run pytest
 - Use [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` …).
 - Every PR must declare its **release impact**: `major` / `minor` / `patch` /
-  `none` (see the PR template).
+  `none` (see the PR template). CI validates that exactly one is selected.
 - Keep PRs small and focused. Update docs and `--help` when behavior changes.
 - Do not merge, publish packages, cut releases, create OAuth apps, or modify
-  external accounts without explicit maintainer approval.
+  external accounts without explicit maintainer approval. Versioning and the
+  release process are documented in [`RELEASING.md`](RELEASING.md); project
+  governance in [`GOVERNANCE.md`](GOVERNANCE.md).
 
 ## Adding a provider or connector
 
 - Providers implement `sobai.providers.base.Provider` and register in
-  `providers/registry.py`. See the provider authoring guide (docs, planned).
-- Connectors expose typed tools via `sobai.tools`. See the connector authoring
-  guide (docs, planned). Never couple a connector to a provider.
+  `providers/registry.py`. See [`docs/authoring-providers.md`](docs/authoring-providers.md).
+- Connectors expose typed tools via `sobai.tools`. See
+  [`docs/authoring-connectors.md`](docs/authoring-connectors.md). Never couple a
+  connector to a provider.
 
 ## Reporting security issues
 

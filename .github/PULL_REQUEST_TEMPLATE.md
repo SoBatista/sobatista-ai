@@ -6,7 +6,8 @@
 
 ## Release impact (required)
 
-Select exactly one:
+Select **exactly one** (CI validates this; it must match the Conventional Commit
+type — `feat`→minor, `fix`→patch, `feat!`/`BREAKING CHANGE:`→major):
 
 - [ ] `major` — breaking change
 - [ ] `minor` — new, backward-compatible feature

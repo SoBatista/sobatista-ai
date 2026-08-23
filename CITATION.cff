@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use SoBatista AI, please cite it using this metadata."
+title: "SoBatista AI (sobai)"
+abstract: >-
+  A provider-neutral AI command-line interface that orchestrates language-model
+  providers and external-data connectors through strict, security-first
+  interfaces.
+type: software
+authors:
+  - name: "SoBatista"
+repository-code: "https://github.com/SoBatista/sobatista-ai"
+url: "https://github.com/SoBatista/sobatista-ai"
+license: MIT
+version: "0.1.0.dev0"
+keywords:
+  - ai
+  - cli
+  - llm
+  - orchestration
+  - anthropic
+  - openai
+  - ollama

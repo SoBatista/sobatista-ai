@@ -21,16 +21,20 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
     (`connectors/youtube/oauth.py`).
 
 ## 2. Malicious Notion pages / documents
-- **Risk:** A page instructs the model to exfiltrate data or take actions.
+- **Risk:** A shared page instructs the model to exfiltrate data or take actions.
 - **Controls:**
-  - ✅ System posture: external content is data, not instructions
-    (`cli/ask.py` system prompt; enforced by design in the orchestrator).
-  - ✅ Retrieved content cannot enable tools or change policy (tools are an
-    explicit allowlist; `tools/base.py`, `core/orchestrator.py`).
+  - ✅ System posture: retrieved Notion content is untrusted data, not
+    instructions — it cannot change policy, enable tools, raise limits, request
+    secrets, or authorize writes (`cli/notion_cmd.py` system prompts; enforced by
+    the allowlisted-tool orchestrator, `tools/base.py`, `core/orchestrator.py`).
   - ✅ Terminal-escape sanitization on display (`core/safeterm.py`), applied to
-    untrusted YouTube titles/fields in `cli/youtube_cmd.py`.
-  - ✅ Connector data classified (INTERNAL) and egress-gated before reaching a
-    cloud model (`policies/engine.py`, enforced in the YouTube AI commands).
+    untrusted Notion titles/content in `cli/notion_cmd.py` (and YouTube fields).
+  - ✅ Notion data classified INTERNAL and egress-gated before reaching a cloud
+    model (`policies/engine.py`, enforced in the Notion/YouTube AI commands);
+    `--local-only` hard-fails first.
+  - ✅ Read-only: no Notion write endpoints are ever called; block traversal is
+    bounded with cycle/duplicate prevention; page refs accept only ids/notion.so
+    URLs (`connectors/notion/`).
 
 ## 3. Prompt injection from comments / issues
 - **Risk:** Attacker-controlled text in a GitHub/Jira comment steers the model.
@@ -67,11 +71,23 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Generated shell wrappers forward `"$@"` / `$argv` verbatim, no `eval`
     (`cli/aliases.py`).
 
-## 6. Terminal escape injection
-- **Risk:** ANSI/OSC sequences in external text rewrite the screen, set the
-  window title, or spoof prompts.
-- **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS and stray control bytes;
-  Rich markup is escaped (`ui/console.py`). Covered by tests.
+## 6. Terminal escape / Unicode injection
+- **Risk:** ANSI/OSC sequences or Unicode bidirectional controls in external text
+  (or model output) rewrite the screen, set the window title, spoof prompts, or
+  visually reorder text (Trojan-Source).
+- **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS, stray C0/C1 control
+  bytes, **and Unicode bidi/format controls**; Rich markup is escaped
+  (`ui/console.py`). Applied to connector data and to interactive-session model
+  output (`cli/session.py`). Covered by tests.
+
+## 6a. Interactive session abuse
+- **Risk:** The chat session executes tools/shell, leaks identity, persists
+  secrets, or silently changes providers.
+- **Controls:** ✅ No connector tools/shell/Python/MCP/web/eval in the session
+  (`registry=None`); model output sanitized; conversation is in-memory only with
+  explicit bounds and no disk history; welcome screen shows no identity/paths/
+  secrets; `--local-only` hard-fails before cloud egress; no provider fallback;
+  session-only switches never rewrite persistent defaults (`cli/session.py`).
 
 ## 7. Excessive model tool loops
 - **Risk:** A runaway agent loops tools indefinitely (cost/DoS).

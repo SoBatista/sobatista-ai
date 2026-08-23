@@ -28,6 +28,7 @@ from .config_cmd import config_show, connections, privacy_explain
 from .doctor import doctor
 from .history_cmd import audit, history, runs_app
 from .init import init
+from .notion_cmd import notion_app
 from .profiles_cmd import profile_app
 from .providers_cmd import (
     connect_command,
@@ -44,7 +45,9 @@ from .youtube_cmd import youtube_app
 app = typer.Typer(
     name="sobai",
     help="SoBatista AI — One CLI. Any model. Your tools.",
-    no_args_is_help=True,
+    # Run the callback even with no subcommand so `sobai` can open an interactive
+    # session (in a TTY) or print actionable guidance (non-interactively).
+    invoke_without_command=True,
     add_completion=True,
     rich_markup_mode="rich",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -113,6 +116,13 @@ def main_callback(
     # under the test runner (which invokes the callback but not main()).
     ctx.call_on_close(_ACTIVE_CTX.close)
 
+    # No subcommand → open the interactive session (TTY) or guide (non-TTY).
+    # `--help`/`--version` are handled eagerly by Click and never reach here.
+    if ctx.invoked_subcommand is None:
+        from .session import launch_or_guide
+
+        launch_or_guide(_ACTIVE_CTX)
+
 
 # -- small top-level commands defined inline -------------------------------
 def tools_list(ctx: typer.Context) -> None:
@@ -180,6 +190,7 @@ app.add_typer(profile_app, name="profile")
 app.add_typer(runs_app, name="runs")
 app.add_typer(aliases_app, name="aliases")
 app.add_typer(youtube_app, name="youtube")
+app.add_typer(notion_app, name="notion")
 
 config_app = typer.Typer(help="Inspect configuration.", no_args_is_help=True)
 config_app.command("show")(config_show)

@@ -7,7 +7,9 @@ sequences. Every piece of external text is passed through :func:`sanitize`
 before it reaches the terminal.
 
 We keep the common, safe whitespace (newline, tab) and drop everything else in
-the C0/C1 control ranges, plus complete ANSI/OSC/DCS sequences.
+the C0/C1 control ranges, complete ANSI/OSC/DCS sequences, and Unicode
+bidirectional / format control characters that can visually reorder or spoof
+text (e.g. the "Trojan Source" RLO/LRO/isolates).
 """
 
 from __future__ import annotations
@@ -33,11 +35,16 @@ _ANSI_SEQUENCE = re.compile(
 # Remaining lone control characters, keeping \t (\x09) and \n (\x0a).
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")
 
+# Unicode bidirectional and directional format controls (Trojan-Source class):
+# LRM/RLM/ALM, LRE/RLE/PDF/LRO/RLO, and the isolates LRI/RLI/FSI/PDI.
+_BIDI_CONTROLS = re.compile("[‎‏؜‪-‮⁦-⁩]")
+
 
 def sanitize(text: str) -> str:
-    """Return *text* with terminal escape sequences and stray control bytes removed."""
+    """Return *text* with terminal escapes, stray control bytes, and bidi controls removed."""
     if not text:
         return text
     text = _ANSI_SEQUENCE.sub("", text)
     text = _CONTROL_CHARS.sub("", text)
+    text = _BIDI_CONTROLS.sub("", text)
     return text

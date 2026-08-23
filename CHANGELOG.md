@@ -6,6 +6,90 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed — canonical repository URL
+- Corrected the canonical repository URL to `https://github.com/SoBatista/sobatista-ai`
+  across package metadata (`pyproject` project URLs), clone instructions, issue
+  configuration, and documentation. The previous `sobatistacyber/...` URL was
+  wrong.
+
+### Added — OSS release, CI, and supply-chain hardening
+- **Versioning:** single authoritative version source (`pyproject` +
+  `importlib.metadata` at runtime); documented SemVer↔PEP 440 lifecycle
+  (alpha/beta/rc/stable), pre-1.0 compatibility, deprecation, supported Pythons,
+  security support, and rollback/yank in `RELEASING.md`. **This build is
+  `0.1.0.dev0` — not a stable `0.1.0`.**
+- **Release automation (prepared, inert):** Release Please prepares release PRs
+  (version + changelog); a separate, prepared-but-inert `release.yml` publishes on
+  a published GitHub Release via **PyPI Trusted Publishing (OIDC)** — no
+  long-lived token — from a protected `pypi` environment, with tag↔version check,
+  `twine check`, both-artifact smoke installs, SHA-256 checksums, a CycloneDX
+  SBOM, signed build-provenance + PEP 740 attestations, and idempotent
+  re-runs. No tag/release is created by this change.
+- **PR release-impact** validation (exactly one of major/minor/patch/none).
+- **CI hardening:** lint, strict types, branch-coverage tests (floor raised to
+  85%), build + metadata validation, install smoke tests (wheel/sdist × pip/uv
+  tool/pipx, incl. non-TTY launch), strict MkDocs build, offline doc-link check,
+  and lockfile consistency. All third-party Actions pinned to full commit SHAs.
+- **Security automation:** `actionlint` + `zizmor` workflow audits, deterministic
+  offline secret scan, runtime license policy, retained CodeQL, Dependency Review
+  (with copyleft denylist), and OpenSSF Scorecard (SARIF).
+- **Repo standards:** `RELEASING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`,
+  `SUPPORT.md`, `CITATION.cff`, ADR-0004/0005, provider/connector authoring
+  guides, a maintainer settings-handoff checklist, structured issue forms,
+  expanded CODEOWNERS, and real status badges.
+
+### Added — interactive `sobai` session
+- Running `sobai` with no subcommand in an interactive terminal opens a polished,
+  provider-neutral chat session (Rich welcome screen; version/provider/model/
+  profile/local-only shown, no identity/paths/secrets). Non-interactive
+  invocations never hang — they print actionable `sobai ask` guidance; `--help`
+  and `--version` never launch the session; `--json` with no subcommand is
+  refused with guidance.
+- Multi-turn in-memory conversation with explicit context bounds (never
+  persisted); reuses existing providers, aliases, profiles, policy, streaming,
+  usage/audit accounting, timeouts, retries, and cancellation. Slash commands:
+  `/help /status /provider[ NAME] /model[ NAME] /profile[ NAME] /usage /clear
+  /exit /quit`. Session-only switches (never rewrite persistent defaults);
+  unknown commands are never sent to the model; empty input ignored; EOF exits;
+  Ctrl-C cancels a generation and, twice at idle, exits.
+- Never enables connector tools, never runs shell/Python/MCP/web/eval, never
+  silently falls back to another provider; model output is sanitized (ANSI/OSC/
+  control + Unicode bidi controls) before display. Line editing via stdlib
+  `readline` (in-memory only; no history written to disk).
+- `core.safeterm` now also strips Unicode bidirectional/format controls
+  (Trojan-Source class).
+
+### Added — Notion connector (read-only)
+- Read-only Notion connector via the official API (`Notion-Version 2026-03-11`);
+  the integration reads only content explicitly shared with it. Never scrapes;
+  never creates, edits, archives, comments on, or deletes anything.
+- Auth: integration token via a hidden prompt, stored **only** in the OS keyring
+  (never in TOML, env, SQLite, arguments, logs, exceptions, fixtures, or audit
+  records) and redacted everywhere. `connect notion` explains the shared-only
+  access model and validates the token; `disconnect notion` removes the keyring
+  credential and local connection metadata.
+- Commands: `connect/disconnect notion`, `notion search`, `recent`, `projects`
+  (deterministic), and `summarize`, `weekly-review`, `ask` (provider-backed).
+- Retrieval: search + cursor pagination; page + recursive block traversal with
+  explicit depth/total bounds, cycle/duplicate prevention, unsupported-block
+  tolerance, and feature-detection of page/data_source/legacy-database shapes;
+  page-id/`notion.so`-URL normalization that refuses arbitrary URLs; UTC
+  timezone-aware `--since` boundaries; 429/529 handling honoring `Retry-After`
+  with bounded retries and timeouts. Every item carries source provenance.
+- `weekly-review` separates observed facts (created/edited pages, to-do-derived
+  completed/open tasks, keyword-heuristic decisions/blockers, project mentions,
+  source references) from clearly-labeled AI interpretation; `projects` uses a
+  documented, non-authoritative heuristic.
+- `notion ask` uses the existing bounded provider/tool orchestration over typed,
+  JSON-Schema, read-only tools; retrieved content is untrusted data (cannot
+  change policy, enable tools, raise limits, request secrets, or authorize
+  writes) and terminal escapes are sanitized before rendering.
+- Privacy: Notion data classified `internal`; cloud egress applies the existing
+  policy (connector + class shown, consent required) with privacy-preserving
+  audit; `--local-only` hard-fails before any external disclosure and never
+  switches providers.
+- Docs: `docs/notion.md` (setup, sharing, limitations, privacy, troubleshooting).
+
 ### Added — safe local self-update (`sobai update`)
 - `sobai update` refreshes the globally installed `sobai` from a validated local
   `sobatista-ai` checkout; `--source PATH` validates and remembers the checkout

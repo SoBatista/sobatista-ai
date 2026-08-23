@@ -2,6 +2,11 @@
 
 **One CLI. Any model. Your tools.**
 
+[![CI](https://github.com/SoBatista/sobatista-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/SoBatista/sobatista-ai/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SoBatista/sobatista-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/SoBatista/sobatista-ai/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
+
 `sobai` is a provider-neutral AI command-line interface. It is *not* a model
 runtime — it is a clean, secure orchestration layer that connects the models you
 already use (Anthropic Claude, OpenAI, local Ollama, and optionally the Claude
@@ -41,7 +46,7 @@ implemented and working:
 | `--local-only` enforcement + cloud-egress consent + audit | ✅ working |
 | Shell wrappers (`sobai aliases install …`) | ✅ working |
 | **YouTube connector** (read-only analytics via OAuth) | ✅ working |
-| Connector: Notion (read-only) | 🚧 next |
+| **Notion connector** (read-only search / pages / weekly-review) | ✅ working |
 | Natural-language → typed plan routing, MCP server | 🚧 next |
 | Write actions (`--apply`), GitHub/Jira/website connectors | 🔭 roadmap |
 
@@ -65,7 +70,7 @@ pipx install sobatista-ai
 For local development:
 
 ```bash
-git clone https://github.com/sobatistacyber/sobatista-ai
+git clone https://github.com/SoBatista/sobatista-ai
 cd sobatista-ai
 uv sync --group dev
 uv run sobai --help
@@ -90,7 +95,13 @@ never writes secrets to disk. See [`docs/subscriptions.md`](docs/subscriptions.m
 ## Usage
 
 ```bash
-# Ask any provider
+# Interactive session (run in a terminal with no subcommand)
+sobai                        # opens a conversational session (/help for commands)
+sobai -p ollama -m qwen14b   # preselect a provider/model for the session
+sobai --local-only           # session that refuses any cloud egress
+# (non-interactive `sobai` prints guidance instead of hanging; use `sobai ask` in scripts)
+
+# Ask any provider (one-shot; ideal for automation)
 sobai ask "Explain this error"
 sobai ask --provider claude  "Review this architecture"
 sobai ask --provider openai  "Review this architecture"
@@ -126,6 +137,13 @@ sobai youtube analytics --period 30d
 sobai youtube top --period 90d --metric watch-time --limit 10
 sobai youtube compare --period 30d --previous
 sobai youtube ask --provider claude "Explain my last 30 days"
+
+# Notion (read-only, official API — see docs/notion.md for setup)
+sobai connect notion                       # integration token (hidden prompt) -> keyring
+sobai notion search "roadmap"
+sobai notion recent --since 7d
+sobai notion weekly-review --provider claude
+sobai notion ask --provider claude "What did I work on this week?"
 
 # Privacy controls
 sobai --local-only ask "..."        # hard-fails if anything would leave the machine
@@ -205,9 +223,10 @@ filenames.
 
 ## Roadmap
 
-- **Now:** YouTube read-only analytics via OAuth ([setup & limitations](docs/youtube.md)).
-- **Next:** Notion (read-only search & weekly review), natural-language plan
-  routing, MCP server, GitHub/Jira.
+- **Now:** YouTube read-only analytics ([docs](docs/youtube.md)) and Notion
+  read-only search/pages/weekly-review ([docs](docs/notion.md)).
+- **Next:** natural-language plan routing (`--dry-run`/`explain-plan`), MCP
+  server, GitHub/Jira.
 - **Later:** controlled writes behind `--apply` with preview/confirmation.
 
 ## Contributing

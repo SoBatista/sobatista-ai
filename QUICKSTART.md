@@ -42,9 +42,14 @@ Choose your default:
 Direct API keys are optional and clearly labeled as separate metered billing.
 See [`docs/subscriptions.md`](docs/subscriptions.md).
 
-## 3. Ask
+## 3. Chat or ask
+
+Run `sobai` with no arguments in a terminal to open an interactive session
+(type `/help` for commands, `/exit` to quit). For scripts and one-shots, use
+`sobai ask`:
 
 ```bash
+sobai                                  # interactive session
 sobai ask "Explain this error"
 sobai -p codex-cli  -m default ask "Summarize this design"
 sobai -p ollama -m qwen2.5-coder:14b ask "Review this code"
@@ -79,6 +84,18 @@ sobai update --yes             # skip the confirmation prompt
 `update` validates the checkout, builds it, then reinstalls with
 `uv tool install --force` and verifies the result — using safe argv arrays only,
 and never running `git`, fetching remote code, or publishing anything.
+
+## Connect your tools (read-only)
+
+```bash
+sobai connect youtube      # YouTube analytics — see docs/youtube.md
+sobai connect notion       # Notion (integration token via hidden prompt) — see docs/notion.md
+sobai notion search "roadmap"
+sobai notion weekly-review --provider claude
+```
+
+Notion reads only pages/databases you explicitly share with your integration;
+the token is stored only in your OS keyring.
 
 ## Handy extras
 

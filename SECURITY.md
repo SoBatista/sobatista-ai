@@ -10,7 +10,24 @@ Please report security issues privately to the maintainer rather than opening a
 public issue. Include reproduction steps and impact. We aim to acknowledge
 reports promptly and coordinate a fix and disclosure timeline with you.
 
-Do **not** include real credentials or tokens in a report.
+Do **not** include real credentials or tokens in a report. Report privately via
+[GitHub Security Advisories](https://github.com/SoBatista/sobatista-ai/security/advisories/new).
+
+## Supported versions
+
+This project is **pre-1.0 and pre-release**: the API and CLI surface may change
+between minor versions (see [`RELEASING.md`](RELEASING.md) for the compatibility
+policy). Security fixes are provided only for the **most recent released
+version**. There is no supported stable release yet; `0.1.0.dev0` is a
+development version and must not be treated as stable.
+
+| Version line | Supported |
+|--------------|-----------|
+| latest release | ✅ security fixes |
+| any older pre-release | ❌ upgrade to latest |
+
+When a fixed release is published, older affected pre-releases are
+[yanked](https://pypi.org/help/#yanked) on PyPI where appropriate.
 
 ## Security model & controls
 
@@ -55,6 +72,18 @@ Do **not** include real credentials or tokens in a report.
 ### No silent fallback
 - SoBatista AI never silently switches providers (e.g. local → cloud) on error.
 
+### Notion connector (read-only)
+- The integration token is entered via a hidden prompt and stored **only** in the
+  OS keyring — never in TOML, env, SQLite, arguments, logs, exceptions, fixtures,
+  shell history, or audit records — and is redacted from all output. The
+  integration can read only content explicitly shared with it; Phase 1 performs
+  no writes of any kind.
+- Retrieved Notion content is treated as untrusted data: it cannot change policy,
+  enable tools, raise limits, request secrets, or authorize writes, and terminal
+  escape sequences are stripped before display. Page references accept only ids
+  or `notion.so` URLs (arbitrary URLs are refused). Traversal is bounded with
+  cycle/duplicate prevention; rate limits are handled with `Retry-After`.
+
 ### Self-update (`sobai update`)
 - Updates only from a **local checkout you point it at**, validated by reading
   `pyproject.toml` and confirming the project name is `sobatista-ai`; missing,
@@ -68,10 +97,29 @@ Do **not** include real credentials or tokens in a report.
   changes, publishes, tags, or releases. Each update writes a privacy-preserving
   audit event.
 
+### Interactive session
+- Running `sobai` with no subcommand opens a conversational session that reuses
+  the same security model: it never enables connector tools, never executes
+  shell/Python/`eval`/MCP/web tools, never falls back between providers, and
+  sanitizes all model output (ANSI/OSC/control + Unicode bidirectional controls)
+  before display. `--local-only` still fails closed. Prompt history is held in
+  memory only and never written to disk.
+
 ### Supply chain
-- Pinned, reviewed dependencies with automated updates.
-- CI runs linting, type-checking, tests, dependency review, and code scanning.
-- Releases are checksummed, and provide an SBOM and provenance where practical.
+- **Dependencies:** pinned via `uv.lock`, reviewed, and updated by Dependabot.
+  Dependency Review blocks high-severity and copyleft additions on PRs.
+- **Actions:** every third-party GitHub Action is pinned to a full commit SHA
+  with a human-readable version comment; Dependabot updates those pins. Workflows
+  are linted with `actionlint` and audited with `zizmor`.
+- **Static analysis:** CodeQL (security-and-quality) and OpenSSF Scorecard run on
+  a schedule and upload SARIF to code scanning.
+- **Secrets:** a deterministic, offline secret scan runs in CI in addition to
+  platform secret scanning; a license policy check rejects copyleft runtime deps.
+- **Releases:** published to PyPI via **Trusted Publishing (OIDC)** — there is no
+  long-lived PyPI token in the repository — from a protected `pypi` environment.
+  Each release ships SHA-256 checksums, a CycloneDX SBOM, signed build-provenance
+  attestations, and PyPI's PEP 740 attestations. Least-privilege permissions are
+  set per job. See [`RELEASING.md`](RELEASING.md).
 
 ## Threat model
 
