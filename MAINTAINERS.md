@@ -6,7 +6,7 @@ decision-making.
 
 | Maintainer | GitHub | Areas |
 |------------|--------|-------|
-| SoBatista  | [@sobatistacyber](https://github.com/sobatistacyber) | Overall, security, providers, connectors, releases |
+| SoBatista  | [@SoBatista](https://github.com/SoBatista) | Overall, security, providers, connectors, releases |
 
 > The GitHub handles here and in [`.github/CODEOWNERS`](.github/CODEOWNERS) must
 > match accounts (or teams) that actually have write access to the repository.

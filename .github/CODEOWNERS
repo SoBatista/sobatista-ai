@@ -3,27 +3,27 @@
 # protection (see docs/repo-settings-checklist.md).
 
 # Default owner for everything in this repo.
-*                               @sobatistacyber
+*                               @SoBatista
 
 # Security-sensitive source areas warrant extra care on review.
-/src/sobai/auth/                @sobatistacyber
-/src/sobai/policies/            @sobatistacyber
-/src/sobai/core/redaction.py    @sobatistacyber
-/src/sobai/core/safeterm.py     @sobatistacyber
+/src/sobai/auth/                @SoBatista
+/src/sobai/policies/            @SoBatista
+/src/sobai/core/redaction.py    @SoBatista
+/src/sobai/core/safeterm.py     @SoBatista
 
 # CI / supply chain / release automation.
-/.github/                       @sobatistacyber
-/.github/workflows/             @sobatistacyber
-/.github/CODEOWNERS             @sobatistacyber
-/.github/dependabot.yml         @sobatistacyber
-/scripts/                       @sobatistacyber
-/release-please-config.json     @sobatistacyber
-/.release-please-manifest.json  @sobatistacyber
-/pyproject.toml                 @sobatistacyber
+/.github/                       @SoBatista
+/.github/workflows/             @SoBatista
+/.github/CODEOWNERS             @SoBatista
+/.github/dependabot.yml         @SoBatista
+/scripts/                       @SoBatista
+/release-please-config.json     @SoBatista
+/.release-please-manifest.json  @SoBatista
+/pyproject.toml                 @SoBatista
 
 # Security & governance documentation.
-/SECURITY.md                    @sobatistacyber
-/THREAT_MODEL.md                @sobatistacyber
-/RELEASING.md                   @sobatistacyber
-/GOVERNANCE.md                  @sobatistacyber
-/MAINTAINERS.md                 @sobatistacyber
+/SECURITY.md                    @SoBatista
+/THREAT_MODEL.md                @SoBatista
+/RELEASING.md                   @SoBatista
+/GOVERNANCE.md                  @SoBatista
+/MAINTAINERS.md                 @SoBatista
