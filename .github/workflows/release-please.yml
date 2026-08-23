@@ -19,6 +19,12 @@ jobs:
       contents: write # create/update the release PR, tag, and GitHub Release
       pull-requests: write
       issues: write
+    outputs:
+      # Raw JSON, empty on pushes that produce no release PR — the release PR's
+      # own merge commit being the common case. Deliberately not parsed here:
+      # fromJSON("") is a template error, and a template error inside a step's
+      # `env:` block fails that step even when its `if:` guard is false.
+      pr_json: ${{ steps.release.outputs.pr }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
@@ -32,33 +38,49 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Release Please rewrites pyproject's [project].version but knows nothing
-      # about uv.lock, which records that same version for the workspace package.
-      # Without this, CI's "Lockfile consistency" job (`uv lock --check`) fails on
-      # every release PR. Runs only when a release PR exists.
+  # Release Please rewrites pyproject's [project].version but knows nothing about
+  # uv.lock, which records that same version for the workspace package. Without
+  # this, CI's "Lockfile consistency" job (`uv lock --check`) fails on every
+  # release PR. The guard sits at job level so that nothing inside is evaluated
+  # on pushes that produced no release PR.
+  sync-lockfile:
+    name: Sync uv.lock on the release PR
+    needs: release-please
+    if: needs.release-please.outputs.pr_json != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the re-locked uv.lock to the release branch
+    steps:
+      - name: Resolve the release branch
+        id: branch
+        env:
+          # The JSON reaches jq through the environment, never the command line.
+          PR_JSON: ${{ needs.release-please.outputs.pr_json }}
+        run: |
+          set -euo pipefail
+          branch="$(jq -er '.headBranchName' <<<"$PR_JSON")"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
       - name: Check out the release branch
-        if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: ${{ steps.branch.outputs.name }}
           # No ambient credentials in the working tree; the push below supplies
           # the token through a credential helper instead (zizmor: artipacked).
           persist-credentials: false
 
       - name: Install uv
-        if: ${{ steps.release.outputs.pr }}
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          # This job writes to the release branch that feeds the publishing
-          # pipeline, so it takes no cache (zizmor: cache-poisoning).
+          # This job writes to the branch that feeds the publishing pipeline, so
+          # it takes no cache (zizmor: cache-poisoning).
           enable-cache: false
 
       - name: Sync uv.lock with the bumped version
-        if: ${{ steps.release.outputs.pr }}
         env:
           # Branch and token arrive as environment variables, never interpolated
           # into the shell (zizmor: template-injection).
-          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          BRANCH: ${{ steps.branch.outputs.name }}
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
