@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
+from sobai import __version__
 from sobai.cli import session as session_mod
 from sobai.cli.app import app
 from sobai.cli.session import InteractiveSession
@@ -159,7 +160,7 @@ def test_welcome_content_and_no_secrets(env, capsys) -> None:
     out = capsys.readouterr().out
     assert "SoBatista AI" in out
     assert "One CLI. Any model. Your tools." in out
-    assert "0.1.0.dev0" in out
+    assert __version__ in out
     assert "ollama" in out and "local" in out
     assert "local-only" in out
     assert "/help" in out
