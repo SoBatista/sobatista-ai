@@ -149,7 +149,10 @@ jobs:
             pipx)
               python -m pip install --upgrade pipx
               python -m pipx install "$WHEEL"
-              echo "SMOKE=$HOME/.local/bin/sobai" >> "$GITHUB_ENV" ;;
+              # pipx honors PIPX_BIN_DIR (e.g. /opt/pipx_bin on GitHub runners),
+              # which is not always ~/.local/bin — resolve it rather than assume.
+              PIPX_BIN_DIR=$(python -m pipx environment --value PIPX_BIN_DIR)
+              echo "SMOKE=$PIPX_BIN_DIR/sobai" >> "$GITHUB_ENV" ;;
           esac
 
       - name: Smoke-test the installed CLI
