@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0 (2026-08-23)
+
+
+### Features
+
+* add Notion, interactive sessions, and OSS release foundations ([#2](https://github.com/SoBatista/sobatista-ai/issues/2)) ([9fa4d0b](https://github.com/SoBatista/sobatista-ai/commit/9fa4d0b064a68749f59f006505524aec072f636d))
+* **cli:** add safe local update command ([3fb2ef1](https://github.com/SoBatista/sobatista-ai/commit/3fb2ef1a151f216b410dd3c576b725748173fcfb))
+* Phase 1 secure core — providers, policy, keyring, CLI ([2a88d03](https://github.com/SoBatista/sobatista-ai/commit/2a88d03a26d4e79dd762611686f779ec53a2fbc4))
+* **youtube:** read-only YouTube connector (analytics, OAuth, tools) ([ee972b3](https://github.com/SoBatista/sobatista-ai/commit/ee972b381a6297d14e9c28a7e22b2afc2c15c0fb))
+
+
+### Bug Fixes
+
+* **init:** align subscription-CLI billing mode and per-run usage metrics ([36328b8](https://github.com/SoBatista/sobatista-ai/commit/36328b8edd27b58ccfbaa805f16e9ea49b65ae7a))
+* **init:** support subscription-authenticated CLI providers ([fcacc3d](https://github.com/SoBatista/sobatista-ai/commit/fcacc3d0914db1af3305e96d2a5497800798e8df))
+
 ## [Unreleased]
 
 ### Changed — canonical repository URL
