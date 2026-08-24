@@ -4,23 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.1.0 (2026-08-23)
-
-
-### Features
-
-* add Notion, interactive sessions, and OSS release foundations ([#2](https://github.com/SoBatista/sobatista-ai/issues/2)) ([9fa4d0b](https://github.com/SoBatista/sobatista-ai/commit/9fa4d0b064a68749f59f006505524aec072f636d))
-* **cli:** add safe local update command ([3fb2ef1](https://github.com/SoBatista/sobatista-ai/commit/3fb2ef1a151f216b410dd3c576b725748173fcfb))
-* Phase 1 secure core — providers, policy, keyring, CLI ([2a88d03](https://github.com/SoBatista/sobatista-ai/commit/2a88d03a26d4e79dd762611686f779ec53a2fbc4))
-* **youtube:** read-only YouTube connector (analytics, OAuth, tools) ([ee972b3](https://github.com/SoBatista/sobatista-ai/commit/ee972b381a6297d14e9c28a7e22b2afc2c15c0fb))
-
-
-### Bug Fixes
-
-* **init:** align subscription-CLI billing mode and per-run usage metrics ([36328b8](https://github.com/SoBatista/sobatista-ai/commit/36328b8edd27b58ccfbaa805f16e9ea49b65ae7a))
-* **init:** support subscription-authenticated CLI providers ([fcacc3d](https://github.com/SoBatista/sobatista-ai/commit/fcacc3d0914db1af3305e96d2a5497800798e8df))
-
 ## [Unreleased]
+
+## [0.1.1] - 2026-08-24
+
+### Changed — releases are cut from the reviewed pull request
+- Replaced Release Please with **one pull request, one version**: every PR now
+  carries its own version bump, changelog section, and exactly one
+  `release:major|minor|patch` label, validated by `scripts/check_version.py`.
+  The version that reaches `main` is the one that was reviewed — a
+  `release:minor` at `0.1.1` is always `0.2.0`, with no pre-1.0 special cases.
+- `release.yml` now triggers on a successful CI run on `main` and creates the
+  tag and GitHub Release itself via `scripts/release.py`, then publishes to PyPI.
+  Publishing no longer depends on a Release created by `GITHUB_TOKEN`, which
+  could not trigger it, so a merged release now publishes without manual
+  dispatch and without a personal access token.
+- Removed `release-please.yml`, `release-please-config.json`,
+  `.release-please-manifest.json`, and `scripts/check_release_impact.py`.
+- `CHANGELOG.md` now genuinely follows Keep a Changelog, as its own header has
+  always claimed; `## [x.y.z] - YYYY-MM-DD` sections are the source of release
+  notes.
+
+## [0.1.0] - 2026-08-23
 
 ### Changed — canonical repository URL
 - Corrected the canonical repository URL to `https://github.com/SoBatista/sobatista-ai`
@@ -32,8 +37,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Versioning:** single authoritative version source (`pyproject` +
   `importlib.metadata` at runtime); documented SemVer↔PEP 440 lifecycle
   (alpha/beta/rc/stable), pre-1.0 compatibility, deprecation, supported Pythons,
-  security support, and rollback/yank in `RELEASING.md`. **This build is
-  `0.1.0.dev0` — not a stable `0.1.0`.**
+  security support, and rollback/yank in `RELEASING.md`.
 - **Release automation (prepared, inert):** Release Please prepares release PRs
   (version + changelog); a separate, prepared-but-inert `release.yml` publishes on
   a published GitHub Release via **PyPI Trusted Publishing (OIDC)** — no
@@ -208,4 +212,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - MCP server (`mcp serve/list/doctor`).
 - Controlled writes behind `--apply`; GitHub/Jira/website connectors.
 
-_The first tagged release will be `0.1.0` once Phase 1 is complete and reviewed._
+### Fixed
+- **init:** align subscription-CLI billing mode and per-run usage metrics
+  ([36328b8](https://github.com/SoBatista/sobatista-ai/commit/36328b8edd27b58ccfbaa805f16e9ea49b65ae7a))
+- **init:** support subscription-authenticated CLI providers
+  ([fcacc3d](https://github.com/SoBatista/sobatista-ai/commit/fcacc3d0914db1af3305e96d2a5497800798e8df))

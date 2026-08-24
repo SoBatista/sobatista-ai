@@ -1,0 +1,48 @@
+name: PR release metadata
+
+# Every pull request carries its own version bump, so the version that reaches
+# `main` is the one that was reviewed. This proves the bump, the labels, and the
+# changelog agree before merge.
+#
+# `labeled`/`unlabeled` are included deliberately: the bump is declared by a
+# label, so applying or correcting one must re-run the check rather than leaving
+# a stale result.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate release metadata
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Fetch the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+
+      - name: Require exactly one release label and the matching version bump
+        env:
+          # Labels and the base ref arrive through the environment, never
+          # interpolated into the shell (zizmor: template-injection).
+          RELEASE_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          BASE_REF: ${{ github.base_ref }}
+        run: python scripts/check_version.py --pr "origin/${BASE_REF}"

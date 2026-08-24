@@ -1,7 +1,12 @@
 # ADR-0004: Versioning and automated, OIDC-based releases
 
-- Status: Accepted
+- Status: Superseded by [ADR-0006](0006-one-pull-request-one-version.md)
 - Date: 2026-08-23
+- Superseded: 2026-08-24. The Release Please prepare/publish split and the
+  major/minor/patch/none impact declaration described below were replaced by
+  one-pull-request-one-version. The Trusted Publishing, OIDC, checksum, SBOM,
+  and provenance decisions are **still in force** — ADR-0006 changes only how
+  the version is decided and how publishing is triggered.
 
 ## Context
 
