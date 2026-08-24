@@ -3,6 +3,7 @@
 Canonical Linux layout (XDG):
 
 * ``~/.config/sobai/config.toml`` — user configuration
+* ``~/.config/sobai/skills/`` — user-installed Skills
 * ``~/.local/share/sobai/state.db`` — SQLite state, cache metadata, audit log
 * ``~/.cache/sobai/`` — regenerable cache payloads
 
@@ -50,6 +51,11 @@ class Paths:
     @property
     def config_file(self) -> Path:
         return self.config_dir / "config.toml"
+
+    @property
+    def skills_dir(self) -> Path:
+        """Where user-installed Skills live. Nothing else is ever searched."""
+        return self.config_dir / "skills"
 
     @property
     def state_db(self) -> Path:

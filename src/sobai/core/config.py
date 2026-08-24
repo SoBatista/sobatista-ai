@@ -76,6 +76,22 @@ class ProfileConfig(BaseModel):
     connectors: list[str] | None = None
 
 
+class SkillsConfig(BaseModel):
+    """User configuration for the Skills engine.
+
+    ``models`` maps a fully qualified Skill name to a **logical model alias**
+    already defined in ``[models]`` — never a vendor model id. This is the only
+    place a per-Skill model preference may live; a Skill manifest must not name
+    a model, so a shared Skill cannot pin you to one vendor.
+
+        [skills.models]
+        "builtin:summarize" = "fast"
+        "user:security-report" = "qwen14b"
+    """
+
+    models: dict[str, str] = Field(default_factory=dict)
+
+
 class ConnectorMeta(BaseModel):
     """Non-secret metadata about a connected external system.
 
@@ -98,6 +114,7 @@ class Config(BaseModel):
     models: dict[str, str] = Field(default_factory=dict)
     profiles: dict[str, ProfileConfig] = Field(default_factory=dict)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    skills: SkillsConfig = Field(default_factory=SkillsConfig)
     connectors: dict[str, ConnectorMeta] = Field(default_factory=dict)
     # Absolute path to a validated local sobatista-ai checkout used by
     # `sobai update`. Non-secret; remembered after `sobai update --source PATH`.

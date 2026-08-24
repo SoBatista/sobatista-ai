@@ -79,24 +79,30 @@ def enforce_egress(
     decision: EgressDecision,
     *,
     assume_yes: bool = False,
+    subject: str | None = None,
+    detail: str | None = None,
+    consent_hint: str | None = None,
 ) -> None:
     """Apply an egress decision, prompting the user when consent is required.
 
-    Raises :class:`PolicyError` if the operation is denied.
+    ``subject`` names what the data is (defaulting to the connector), and
+    ``detail`` adds context lines shown before the prompt — for a Skill run,
+    which skill, which model, and which input. Raises :class:`PolicyError` if
+    the operation is denied.
     """
     if decision.action is EgressAction.ALLOW:
         return
+    origin = subject or f"'{decision.connector or 'connector'}'"
     if decision.action is EgressAction.DENY:
         raise PolicyError(
-            f"Sending '{decision.data_class}' data from "
-            f"{decision.connector or 'a connector'} to '{decision.provider}' is denied "
-            f"({decision.reason}).",
+            f"Sending '{decision.data_class}' data from {origin} to "
+            f"'{decision.provider}' is denied ({decision.reason}).",
             hint="Use a local provider (`-p ollama`) or adjust policy.egress in config.",
         )
     # CONSENT
     summary = (
-        f"About to send [{decision.data_class}] data from "
-        f"'{decision.connector or 'connector'}' to cloud provider '{decision.provider}'."
+        f"About to send [{decision.data_class}] data from {origin} "
+        f"to cloud provider '{decision.provider}'."
     )
     if assume_yes:
         app.ui.info(summary + " (auto-approved)")
@@ -104,9 +110,12 @@ def enforce_egress(
     if not app.ui.is_interactive():
         raise PolicyError(
             summary + " Cannot prompt for consent in a non-interactive session.",
-            hint="Re-run interactively, pass --yes, or set an explicit policy.egress entry.",
+            hint=consent_hint
+            or "Re-run interactively, pass --yes, or set an explicit policy.egress entry.",
         )
     app.ui.warn(summary)
+    if detail:
+        app.ui.info(detail)
     approved = typer.confirm("Allow this data to leave your machine?", default=False)
     if not approved:
         raise PolicyError("Egress declined by user.", hint="Nothing was sent.")

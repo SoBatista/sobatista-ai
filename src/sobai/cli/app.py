@@ -38,6 +38,7 @@ from .providers_cmd import (
     provider_app,
     providers_app,
 )
+from .skills_cmd import skills_app, skills_run
 from .update_cmd import update_command
 from .usage_cmd import usage_command
 from .youtube_cmd import youtube_app
@@ -170,6 +171,9 @@ def update_check(ctx: typer.Context) -> None:
 
 # -- command registration --------------------------------------------------
 app.command("ask")(ask_command)
+# `sobai run NAME` is the ergonomic spelling of `sobai skills run NAME`. It is
+# the *same function object*, so there is exactly one execution path.
+app.command("run")(skills_run)
 app.command("init")(init)
 app.command("doctor")(doctor)
 app.command("connect")(connect_command)
@@ -191,6 +195,7 @@ app.add_typer(runs_app, name="runs")
 app.add_typer(aliases_app, name="aliases")
 app.add_typer(youtube_app, name="youtube")
 app.add_typer(notion_app, name="notion")
+app.add_typer(skills_app, name="skills")
 
 config_app = typer.Typer(help="Inspect configuration.", no_args_is_help=True)
 config_app.command("show")(config_show)
@@ -221,7 +226,13 @@ def _emit_error(exc: SobaiError) -> None:
 def main() -> None:
     """Console-script entry point with typed exit codes."""
     try:
-        app(standalone_mode=False)
+        # Under standalone_mode=False, Typer *returns* an exit code instead of
+        # raising for `Exit` — including the 130 it substitutes for a
+        # KeyboardInterrupt. Discarding the return value would make Ctrl-C, and
+        # any command that raises `typer.Exit(code)`, exit 0.
+        code = app(standalone_mode=False)
+        if isinstance(code, int) and code != 0:
+            sys.exit(code)
     except SobaiError as exc:
         _emit_error(exc)
         sys.exit(int(exc.exit_code))

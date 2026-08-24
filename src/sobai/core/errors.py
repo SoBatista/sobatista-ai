@@ -28,6 +28,7 @@ class ExitCode(IntEnum):
     DEPENDENCY = 11
     BUILD = 12
     UPDATE = 13
+    SKILL = 14
     CANCELLED = 130
 
 
@@ -115,6 +116,24 @@ class UpdateError(SobaiError):
     """Installing or verifying the refreshed tool failed."""
 
     exit_code = ExitCode.UPDATE
+
+
+class SkillError(SobaiError):
+    """A Skill is malformed, ambiguous, or cannot be run as declared."""
+
+    exit_code = ExitCode.SKILL
+
+
+class SkillNotFoundError(NotFoundError):
+    """No Skill matches the requested name."""
+
+
+class AmbiguousSkillError(SkillError):
+    """A short name matches Skills in more than one namespace.
+
+    Never resolved by preferring one namespace: a user Skill must not silently
+    shadow a built-in one, so the caller is told to qualify the name instead.
+    """
 
 
 class OperationDeclined(SobaiError):
