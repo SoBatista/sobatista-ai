@@ -39,6 +39,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   missing, duplicate, or ill-typed variables fail before a provider is
   contacted. Input is a separate user message inside boundary markers it cannot
   forge.
+- **One explicit input source per run:** a positional argument, `--file PATH`, or
+  piped stdin — used only when neither of the other two was given. Supplying both
+  a positional argument and `--file` is an error rather than a silent precedence
+  rule, and with no input on a terminal the run fails immediately rather than
+  blocking, so `sobai run` is safe in a script or a CI job.
 - **Per-skill model mapping** in `[skills.models]`, keyed by fully qualified
   name and mapping to logical aliases rather than vendor model ids. Resolution
   is CLI flags → skill mapping → profile → defaults, and `skills show` and
@@ -65,12 +70,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Terminal-control characters and Unicode bidirectional controls in a Skill's
   text are **refused rather than stripped**: a prompt that renders differently
   from how it reads cannot be reviewed.
+- **What these defenses do and do not claim.** Layering, boundary markers, and
+  marker defanging are *structural*: they bound what reaches the model and what a
+  Skill or its input is able to reach. They reduce prompt-injection risk, but no
+  prompt arrangement can make model behaviour perfectly immune to it. Input
+  remains untrusted, and the durable guarantees are the ones outside the model —
+  no tools, no shell, no filesystem, no network, and no silent egress.
 
 ### Fixed
 - `sobai` exited **0 after a cancelled run**. Typer converts `KeyboardInterrupt`
   into an `Exit(130)` which, under `standalone_mode=False`, is *returned* rather
   than raised; the entry point discarded that return value, so Ctrl-C — and any
   command raising `typer.Exit(code)` — reported success. `main` now honours it.
+- **A one-shot provider's answer could be swallowed while streaming.** The
+  streaming path rendered text deltas only, so a provider that returns a whole
+  completion without emitting any delta displayed nothing at all. The `sobai run`
+  path now tracks whether a delta actually arrived and renders the final text
+  when none did, so streaming and one-shot providers both produce output.
+  `sobai ask` still uses the older pattern and is unchanged by this release.
 
 ### Documentation
 - New [Skills guide](docs/skills.md) covering the format, trust boundaries,
