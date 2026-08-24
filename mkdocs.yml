@@ -23,6 +23,9 @@ theme:
 
 nav:
   - Home: index.md
+  - Skills:
+      - Skills and authoring guide: skills.md
+      - Acknowledgements: acknowledgements.md
   - Connectors:
       - YouTube: youtube.md
       - Notion: notion.md
@@ -39,6 +42,8 @@ nav:
       - ADR-0003 Keyring credentials: adr/0003-keyring-credentials.md
       - ADR-0004 Versioning and releases: adr/0004-versioning-and-releases.md
       - ADR-0005 Interactive session: adr/0005-interactive-session.md
+      - ADR-0006 One pull request, one version: adr/0006-one-pull-request-one-version.md
+      - ADR-0007 Skills, not executable plugins: adr/0007-skills-not-executable-plugins.md
 
 markdown_extensions:
   - admonition

@@ -46,12 +46,38 @@ provider, subject to the egress rules above (local Ollama keeps it on-machine;
 `--local-only` hard-fails before any cloud disclosure). The Notion integration
 token lives only in your OS keyring. See [`docs/notion.md`](docs/notion.md).
 
+## Skills
+
+A Skill is a recipe, not a data source. Running one sends **only what you
+explicitly supplied** — a positional argument, a `--file`, or piped stdin — plus
+the Skill's own prompt. A Skill never fetches a URL found in your input, never
+opens a path found in it, and never reaches any external system.
+
+Each Skill recommends a data classification and `--data-class` overrides it; the
+default is `internal`, and `builtin:security-review` recommends `sensitive`. The
+ordinary egress rules then apply, so a local provider keeps everything on the
+machine and `--local-only` hard-fails before any cloud disclosure.
+
+**What is recorded is identity and shape, never content.** A Skill run's history
+entry is summarised as `skill builtin:summarize@1.0.0` — not your input, unlike
+`sobai ask`, which records a redacted prompt excerpt. The audit record holds the
+Skill's qualified name, version, and digest, and the input's source, size, and
+SHA-256 hash. Your prompt and the model's output are not stored.
+
+`--dry-run` shows exactly what *would* be sent, described by size and hash
+rather than content, so a plan is safe to paste into a ticket or a CI log.
+
+Skills you write are private by default: they live in `~/.config/sobai/skills/`,
+are never uploaded, and are never shared unless you copy them somewhere yourself.
+
 ## Controls
 
 ```bash
 sobai --local-only ...     # hard-fail if anything would leave the machine
 sobai privacy explain      # show the boundary and your effective policy
 sobai audit                # what data class left, to which provider, when
+sobai --dry-run run NAME --file f.md   # what would be sent, without sending it
+sobai skills paths         # where skills load from, and what is never searched
 sobai config show --redacted
 sobai connections          # what is connected
 sobai disconnect <name>    # remove stored credentials

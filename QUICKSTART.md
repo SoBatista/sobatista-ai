@@ -85,6 +85,32 @@ sobai update --yes             # skip the confirmation prompt
 `uv tool install --force` and verifies the result — using safe argv arrays only,
 and never running `git`, fetching remote code, or publishing anything.
 
+## Run a Skill
+
+A Skill is a reusable task recipe — a manifest plus a prompt, never code. Seven
+ship built in, and they work with whichever provider you configured.
+
+```bash
+sobai skills list                                # what is available
+sobai skills show builtin:summarize              # manifest, digest, and the prompt itself
+cat article.md | sobai run summarize             # `sobai run` == `sobai skills run`
+sobai run summarize --file article.md --var length=brief
+sobai run explain-code --file src/parser.py --var audience=newcomer
+sobai --dry-run run security-review --file diff.patch   # plan only; nothing is sent
+```
+
+Write your own, then install it deliberately — nothing is ever loaded from the
+directory you happen to be standing in:
+
+```bash
+mkdir -p my-skill && $EDITOR my-skill/skill.toml my-skill/prompt.md
+sobai skills validate ./my-skill
+sobai skills install ./my-skill
+sobai run user:my-skill --file notes.md
+```
+
+Full format and authoring guide: [`docs/skills.md`](docs/skills.md).
+
 ## Connect your tools (read-only)
 
 ```bash
@@ -105,7 +131,9 @@ sobai providers list               # billing + auth at a glance
 sobai --local-only ask "..."       # hard-fail if anything would leave the machine
 sobai aliases install bash         # yb-claude, yb-cx, notion-claude, sobai-update, …
 sobai --json ask "..."             # machine-readable output
+sobai --json skills list           # stable, versioned JSON for scripts
+sobai skills paths                 # where skills load from, and what is never searched
 ```
 
-More: [`README.md`](README.md), [`PRIVACY.md`](PRIVACY.md),
-[`SECURITY.md`](SECURITY.md).
+More: [`README.md`](README.md), [`docs/skills.md`](docs/skills.md),
+[`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md).

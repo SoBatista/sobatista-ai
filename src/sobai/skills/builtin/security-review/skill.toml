@@ -1,0 +1,28 @@
+schema_version = 1
+
+[skill]
+name = "security-review"
+version = "1.0.0"
+description = "Review supplied material for security weaknesses defensively, and say what cannot be assessed."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["security", "code", "review"]
+
+[input]
+description = "Code, a diff, a configuration file, or a design description you are authorized to review."
+required = true
+max_bytes = 262144
+max_chars = 200000
+
+[output]
+format = "markdown"
+description = "An assessment line, ranked findings with evidence and remediation, and the limits of the review."
+
+[policy]
+recommended_data_class = "sensitive"
+required_tools = []
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

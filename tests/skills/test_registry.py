@@ -155,7 +155,8 @@ def test_discovery_ignores_installer_scratch_directories(
     (skills_dir / ".staging-abc").mkdir()
     (skills_dir / "_private").mkdir()
     registry = discover_skills(skills_dir)
-    assert [s.qualified_name for s in registry.list()] == ["user:good"]
+    user_skills = [s.qualified_name for s in registry.list() if s.namespace == Namespace.USER]
+    assert user_skills == ["user:good"]
     assert registry.broken == []
 
 
@@ -165,7 +166,7 @@ def test_discovery_records_a_symlinked_user_skill_as_broken(
     real = make_skill_dir("elsewhere")
     os.symlink(real, skills_dir / "elsewhere", target_is_directory=True)
     registry = discover_skills(skills_dir)
-    assert registry.skills == {}
+    assert registry.get(Namespace.USER, "elsewhere") is None
     assert "symbolic link" in registry.broken[0].reason
 
 

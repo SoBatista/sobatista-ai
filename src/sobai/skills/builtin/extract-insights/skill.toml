@@ -1,0 +1,35 @@
+schema_version = 1
+
+[skill]
+name = "extract-insights"
+version = "1.0.0"
+description = "Pull the substantive ideas out of material, separating what is stated from what is inferred."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["analysis", "reading"]
+
+[input]
+description = "Any substantive prose: an article, a paper, a transcript, a discussion, or research notes."
+required = true
+max_bytes = 262144
+max_chars = 200000
+
+[output]
+format = "markdown"
+description = "A numbered list of insights, each with its basis, type, and confidence."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[[variables]]
+name = "count"
+type = "integer"
+description = "Maximum number of insights to return."
+required = false
+default = 10
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

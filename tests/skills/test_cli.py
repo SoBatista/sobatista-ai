@@ -108,7 +108,7 @@ def test_list_reports_a_broken_skill_rather_than_hiding_it(cli: Cli, env: dict[s
     write_skill(env, "broken", manifest="not [ toml")
     result = cli(["--json", "skills", "list"])
     payload = json.loads(result.stdout)
-    assert payload["skills"] == []
+    assert [s["qualified_name"] for s in payload["skills"] if s["namespace"] == "user"] == []
     assert payload["broken"][0]["qualified_name"] == "user:broken"
 
 
@@ -199,7 +199,8 @@ def test_install_json_and_then_runnable(cli: Cli, env: dict[str, str], tmp_path:
     assert payload["action"] == "installed"
     assert payload["changed"] is True
     listing = json.loads(cli(["--json", "skills", "list"]).stdout)
-    assert [s["qualified_name"] for s in listing["skills"]] == ["user:demo"]
+    user_skills = [s["qualified_name"] for s in listing["skills"] if s["namespace"] == "user"]
+    assert user_skills == ["user:demo"]
 
 
 def test_install_never_accepts_a_url(cli: Cli, env: dict[str, str]) -> None:

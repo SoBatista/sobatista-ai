@@ -6,6 +6,86 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-24
+
+### Added — Skills: secure, reusable task recipes
+- **`sobai run NAME`** (and `sobai skills run NAME`, bound to the same function
+  so there is one execution path) runs a **Skill**: a versioned, inspectable
+  task recipe made of a `skill.toml` manifest and a `prompt.md`. Skills are
+  prompt and data only — they cannot execute code, call a tool, open a file, or
+  reach the network, and a Skill prompt is always subordinate to the immutable
+  system policy. See [ADR-0007](docs/adr/0007-skills-not-executable-plugins.md).
+- **Seven original built-in Skills**, packaged as application resources and
+  loadable from a wheel or sdist: `summarize`, `extract-insights`,
+  `analyze-claims`, `explain-code`, `security-review`, `creator-ideas`, and
+  `rewrite`. Each states an output contract, separates evidence from inference,
+  refuses to fabricate facts or claim access to sources it was not given, and
+  works across providers. `security-review` stays defensive and authorized.
+- **Namespaces without silent shadowing.** `builtin:` and `user:`; a short name
+  that matches both raises an actionable ambiguity error naming both candidates,
+  so a user Skill can never quietly replace a built-in. The namespace is
+  assigned by load location, never read from the manifest.
+- **Explicit, local-only installation.** `sobai skills list|show|paths|validate|install`.
+  Skills load only from packaged built-ins and `~/.config/sobai/skills/` — never
+  the working directory, the repository being worked in, `.sobai/`, or an
+  environment-named path, so a checkout cannot supply a system prompt. Nothing
+  is ever downloaded. Installation is atomic, race-safe under an `O_EXCL` lock,
+  and writes the bytes that were validated and hashed, so a source modified
+  mid-install cannot substitute content; a failed replacement rolls back.
+- **A deliberately minimal renderer.** Single-pass substitution of declared
+  scalar variables (`--var name=value`) and nothing else — no `eval`,
+  expressions, template execution, attribute access, calls, loops, includes,
+  environment expansion, filesystem reads, or shell interpolation. Unknown,
+  missing, duplicate, or ill-typed variables fail before a provider is
+  contacted. Input is a separate user message inside boundary markers it cannot
+  forge.
+- **Per-skill model mapping** in `[skills.models]`, keyed by fully qualified
+  name and mapping to logical aliases rather than vendor model ids. Resolution
+  is CLI flags → skill mapping → profile → defaults, and `skills show` and
+  `--dry-run` both explain which rule won.
+- **Typed `--dry-run` plans** that make no provider, connector, network, or
+  subprocess call, need no credentials, and describe the input by source, size,
+  and SHA-256 hash rather than content. The plan models are written for reuse by
+  the later `explain-plan` work.
+- **Data classification and egress gating.** `--data-class` overrides each
+  Skill's recommendation (default `internal`); `restricted` is denied; cloud
+  egress shows the skill, class, destination provider and model, and input size;
+  non-interactive runs that need a decision fail with instructions rather than
+  proceeding; `--local-only` hard-fails before a provider is constructed.
+- **Provenance.** A stable SHA-256 digest over the normalized manifest and
+  prompt, computed rather than asserted, shown in `list`, `show`, plans,
+  results, and audit records. Run history and audit records carry identity and
+  size only — never the prompt or the output.
+- **Stable JSON contracts** for listing, inspection, validation, installation,
+  paths, dry-run plans, and execution results, each with a `kind` discriminator
+  and a version.
+- `/skills` in the interactive session lists what is available and how to run
+  it. The session does not execute Skills, so there is no second path around the
+  input bounds, egress consent, and audit that `sobai run` enforces.
+- Terminal-control characters and Unicode bidirectional controls in a Skill's
+  text are **refused rather than stripped**: a prompt that renders differently
+  from how it reads cannot be reviewed.
+
+### Fixed
+- `sobai` exited **0 after a cancelled run**. Typer converts `KeyboardInterrupt`
+  into an `Exit(130)` which, under `standalone_mode=False`, is *returned* rather
+  than raised; the entry point discarded that return value, so Ctrl-C — and any
+  command raising `typer.Exit(code)` — reported success. `main` now honours it.
+
+### Documentation
+- New [Skills guide](docs/skills.md) covering the format, trust boundaries,
+  namespaces, installation, authoring, model mappings, pipelines, dry-run
+  behaviour, data classification, why current-directory auto-loading is
+  forbidden, why remote installation and executable extensions are deferred, and
+  how Skills differ from connectors, tools, workflows, and MCP.
+- New [ADR-0007](docs/adr/0007-skills-not-executable-plugins.md) and
+  [Acknowledgements](docs/acknowledgements.md), recording
+  [Fabric](https://github.com/danielmiessler/Fabric)'s conceptual influence
+  (inspected 2026-08-24) and confirming that every built-in prompt is original
+  work rather than copied or adapted material.
+- README, QUICKSTART, ARCHITECTURE, SECURITY, PRIVACY, THREAT_MODEL, AI_GUIDE,
+  the example config, and the MkDocs navigation updated for Skills.
+
 ## [0.1.1] - 2026-08-24
 
 ### Changed — releases are cut from the reviewed pull request

@@ -1,0 +1,28 @@
+schema_version = 1
+
+[skill]
+name = "analyze-claims"
+version = "1.0.0"
+description = "Identify the claims an argument makes and assess how well the material itself supports them."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["analysis", "reasoning"]
+
+[input]
+description = "An argumentative text: an essay, a post, a report, a press release, or a transcript."
+required = true
+max_bytes = 262144
+max_chars = 200000
+
+[output]
+format = "markdown"
+description = "The central claim, a per-claim assessment, and an explicit statement of what could not be assessed."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

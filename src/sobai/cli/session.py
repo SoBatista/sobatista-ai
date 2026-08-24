@@ -5,7 +5,10 @@ reuses the existing provider interfaces, model aliases, profiles, policies, usag
 accounting, audit records, timeouts, retries, cancellation, and rendering. It
 never enables connector tools, never runs shell/Python/MCP/web access, never
 silently falls back to another provider, and treats model output as untrusted
-terminal content (escape sequences are sanitized before display).
+terminal content (escape sequences are sanitized before display). ``/skills``
+lists available Skills for discovery only — the session does not execute them,
+so there is no second path around the input bounds, egress consent, and audit
+that ``sobai run`` enforces.
 
 The input loop reads lines through an injectable reader so the whole session is
 testable without a TTY. Line editing/history uses the standard-library
@@ -32,6 +35,7 @@ from sobai.providers.registry import (
     canonical_provider,
     select_provider_model,
 )
+from sobai.skills.registry import discover_skills
 from sobai.ui.console import render_untrusted
 
 from .common import cost_accounting, recorded_model
@@ -52,6 +56,7 @@ _SLASH_COMMANDS = (
     "/provider",
     "/model",
     "/profile",
+    "/skills",
     "/usage",
     "/clear",
     "/exit",
@@ -142,6 +147,8 @@ class InteractiveSession:
             self._cmd_model(arg)
         elif cmd == "/profile":
             self._cmd_profile(arg)
+        elif cmd == "/skills":
+            self._cmd_skills()
         else:
             ui.error(f"Unknown command: {render_untrusted(cmd)}", hint="Type /help for commands.")
         return True
@@ -154,6 +161,7 @@ class InteractiveSession:
             "  /provider [NAME]   show providers, or switch (session only)\n"
             "  /model [NAME]      show model aliases, or switch (session only)\n"
             "  /profile [NAME]    show profiles, or switch (session only)\n"
+            "  /skills            list available skills and how to run one\n"
             "  /usage             show this session's token/cost totals\n"
             "  /clear             clear the in-memory conversation\n"
             "  /exit, /quit       leave the session (Ctrl-D also exits)\n\n"
@@ -183,6 +191,40 @@ class InteractiveSession:
         )
         self.app.ui.print(
             "[muted]Session totals (in-memory). See `sobai usage` for persisted history.[/muted]"
+        )
+
+    def _cmd_skills(self) -> None:
+        """List available Skills. Discovery only — the session never runs one.
+
+        Executing a Skill from the session is deliberately not offered yet: it
+        would mean a second execution path for prompts, input bounds, egress
+        consent, and audit. Until that is reviewed, the session points at the
+        command that already has all of it.
+        """
+        ui = self.app.ui
+        registry = discover_skills(self.app.paths.skills_dir)
+        skills = registry.list()
+        if not skills:
+            ui.print("[muted]No skills available.[/muted]")
+            return
+        rows = [
+            [
+                render_untrusted(skill.qualified_name),
+                render_untrusted(skill.version),
+                render_untrusted(skill.manifest.skill.description),
+            ]
+            for skill in skills
+        ]
+        ui.table("Skills", ["skill", "version", "description"], rows)
+        for broken in registry.broken:
+            ui.warn(
+                f"Skill {render_untrusted(broken.qualified_name)} could not be loaded: "
+                f"{render_untrusted(broken.reason)}"
+            )
+        ui.print(
+            '[muted]Run one from a shell:[/muted] sobai run NAME "INPUT" '
+            "[muted]· inspect it with[/muted] sobai skills show NAME\n"
+            "[muted]Skills are not run inside this session yet.[/muted]"
         )
 
     def _cmd_provider(self, arg: str) -> None:

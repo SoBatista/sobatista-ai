@@ -22,6 +22,13 @@ Two abstractions that never touch each other:
 The `core/` orchestrator is the only place they meet. This is the single most
 important design fact — respect it and everything else composes.
 
+There is a third noun, **Skill**, and it is the *least* powerful of the three: a
+manifest plus a prompt, no code, no capability. A Skill does not reason (that's
+the provider) and does not fetch (that's the connector) — it only shapes the
+instructions. If you find yourself wanting a Skill to fetch, call, or run
+something, you want a connector or a workflow, and the answer is to say so
+rather than widen the Skill format. See ADR-0007.
+
 ## Security is the product
 
 The reason to use `sobai` instead of curl + a model is the safety boundary:
@@ -49,6 +56,12 @@ When in doubt, choose the option that leaks less, asks first, and fails closed.
   connector, secrets in the keyring. Never import a provider.
 - **New command:** add to `cli/`, thread everything through `AppContext`
   (dependency injection) — never reach for globals. Support `--json`.
+- **New Skill:** write `skill.toml` + `prompt.md`, validate with
+  `sobai skills validate`, and keep the prompt original. Built-ins live in
+  `src/sobai/skills/builtin/` and ship as packaged resources. State an output
+  contract, tell the model what it cannot see, and make "I cannot answer from
+  what I was given" an acceptable answer. Never name a vendor or model in a
+  Skill — per-Skill model preference is user config (`[skills.models]`).
 
 ## Verification discipline
 
@@ -60,4 +73,8 @@ When in doubt, choose the option that leaks less, asks first, and fails closed.
 
 - Don't invent current vendor model IDs. Discover or ask.
 - Don't add a second way to do something that bypasses the safety boundary.
+  `sobai run` is bound to the same function as `sobai skills run` for exactly
+  this reason — a second execution path is a second place to forget a check.
+- Don't let a Skill grow a capability. No executable content, no auto-discovery
+  from the working directory, no silent user-over-builtin precedence.
 - Don't merge, release, publish, or create external accounts without approval.

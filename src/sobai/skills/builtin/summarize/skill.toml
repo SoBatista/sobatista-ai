@@ -1,0 +1,37 @@
+schema_version = 1
+
+[skill]
+name = "summarize"
+version = "1.0.0"
+description = "Condense supplied material into a faithful summary at a chosen depth."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["summary", "reading"]
+
+[input]
+description = "Any prose document: an article, a report, a transcript, a thread, or notes."
+required = true
+max_bytes = 262144
+max_chars = 200000
+
+[output]
+format = "markdown"
+description = "The summary, plus a Gaps line and open questions when they apply."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[[variables]]
+name = "length"
+type = "string"
+description = "How much detail to keep: brief, standard, or detailed."
+required = false
+default = "standard"
+choices = ["brief", "standard", "detailed"]
+max_length = 16
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

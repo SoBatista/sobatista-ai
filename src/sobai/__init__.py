@@ -17,7 +17,7 @@ __all__ = ["__version__"]
 # pyproject's [project].version). This constant is only the source-checkout
 # fallback when the package is not installed. Kept in step with pyproject by
 # scripts/check_version.py, which fails CI if the two ever disagree.
-_FALLBACK_VERSION = "0.1.1"
+_FALLBACK_VERSION = "0.2.0"
 
 try:
     __version__ = version("sobatista-ai")

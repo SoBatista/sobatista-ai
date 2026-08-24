@@ -28,6 +28,9 @@ professionals who want one consistent, auditable interface across every model.
 - **Two clean abstractions.** *Providers* reason and request tool calls;
   *connectors* fetch and modify external data. They are never coupled, so any
   model can drive any connector.
+- **Reusable Skills.** Versioned, inspectable task recipes — prompt and data
+  only, never code. `cat article.md | sobai run summarize` works with any
+  provider, and a Skill can never enable a tool or relax a policy.
 - **Auditable.** Every run and every cross-machine data movement is recorded
   locally so you can answer "what left my machine, and where did it go?"
 
@@ -47,6 +50,7 @@ implemented and working:
 | Shell wrappers (`sobai aliases install …`) | ✅ working |
 | **YouTube connector** (read-only analytics via OAuth) | ✅ working |
 | **Notion connector** (read-only search / pages / weekly-review) | ✅ working |
+| **Skills** (`sobai run`, built-in pack, install, dry-run plans) | ✅ working |
 | Natural-language → typed plan routing, MCP server | 🚧 next |
 | Write actions (`--apply`), GitHub/Jira/website connectors | 🔭 roadmap |
 
@@ -109,6 +113,15 @@ sobai ask --provider ollama --model qwen2.5-coder:14b "Review this code"
 
 # Pipe context in
 git diff | sobai ask "Summarize these changes"
+
+# Skills — reusable task recipes (see docs/skills.md)
+sobai skills list                                  # built-ins plus your own
+sobai skills show builtin:summarize                # manifest, digest, prompt
+cat article.md | sobai run summarize               # `sobai run` == `sobai skills run`
+sobai run explain-code --file src/parser.py --var audience=reviewer
+sobai run rewrite "..." --var tone=formal --var length=shorter
+sobai --dry-run run security-review --file diff.patch   # plan only; nothing sent
+sobai skills validate ./my-skill && sobai skills install ./my-skill
 
 # Switch defaults
 sobai providers list
@@ -223,11 +236,17 @@ filenames.
 
 ## Roadmap
 
-- **Now:** YouTube read-only analytics ([docs](docs/youtube.md)) and Notion
-  read-only search/pages/weekly-review ([docs](docs/notion.md)).
-- **Next:** natural-language plan routing (`--dry-run`/`explain-plan`), MCP
-  server, GitHub/Jira.
-- **Later:** controlled writes behind `--apply` with preview/confirmation.
+- **Now:** Skills ([docs](docs/skills.md)), YouTube read-only analytics
+  ([docs](docs/youtube.md)), and Notion read-only search/pages/weekly-review
+  ([docs](docs/notion.md)).
+- **Next:** general natural-language plan routing (`explain-plan`), reusing the
+  typed plan models Skills already produce; then MCP; then typed workflows that
+  compose Skills and connectors.
+- **Later:** controlled writes behind `--apply` with preview/confirmation, and
+  GitHub/Jira connectors.
+
+Skills were influenced conceptually by [Fabric](https://github.com/danielmiessler/Fabric);
+all built-in prompts are original. See [Acknowledgements](docs/acknowledgements.md).
 
 ## Contributing
 

@@ -1,0 +1,43 @@
+schema_version = 1
+
+[skill]
+name = "creator-ideas"
+version = "1.0.0"
+description = "Propose grounded content ideas from supplied material, without pretending to know a creator's channel data."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["creator", "ideas", "content"]
+
+[input]
+description = "Source material to build on: notes, a transcript, an article, a changelog, or supplied analytics."
+required = true
+max_bytes = 131072
+max_chars = 100000
+
+[output]
+format = "markdown"
+description = "A numbered list of ideas, each with a hook, its grounding, a rationale, and an effort estimate."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[[variables]]
+name = "count"
+type = "integer"
+description = "Maximum number of ideas to propose."
+required = false
+default = 8
+
+[[variables]]
+name = "format"
+type = "string"
+description = "The kind of piece the ideas are for, e.g. video, article, short."
+required = false
+default = "piece"
+max_length = 40
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."
