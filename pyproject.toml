@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "sobatista-ai"
 # Single authoritative version source. Release Please bumps this (and the
 # source-checkout fallback in src/sobai/__init__.py) via a reviewed release PR.
-version = "0.1.0"
+version = "0.1.1"
 description = "One CLI. Any model. Your tools. A provider-neutral AI command-line interface."
 readme = "README.md"
 requires-python = ">=3.12"

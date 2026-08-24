@@ -15,8 +15,9 @@ __all__ = ["__version__"]
 
 # The single authoritative version is the installed package metadata (built from
 # pyproject's [project].version). This constant is only the source-checkout
-# fallback when the package is not installed; Release Please keeps it in sync.
-_FALLBACK_VERSION = "0.1.0"  # x-release-please-version
+# fallback when the package is not installed. Kept in step with pyproject by
+# scripts/check_version.py, which fails CI if the two ever disagree.
+_FALLBACK_VERSION = "0.1.1"
 
 try:
     __version__ = version("sobatista-ai")

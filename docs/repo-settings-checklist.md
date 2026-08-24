@@ -27,7 +27,8 @@ the first real release.
 - [ ] **Tag protection rule** for `v*` so only maintainers can create release tags.
 - [ ] **Actions → General:**
   - [ ] Workflow permissions default to **read-only**; "Allow GitHub Actions to
-        create and approve pull requests" **enabled** (needed for Release Please).
+        create and approve pull requests" can stay **disabled** — no workflow
+        here opens pull requests (see ADR-0006).
   - [ ] Fork PRs from outside collaborators require approval to run workflows.
 
 ## GitHub — security features
@@ -40,14 +41,17 @@ the first real release.
 - [ ] **Private vulnerability reporting** enabled (Security Advisories) — matches
       the link in `SECURITY.md`.
 
+## Labels
+
+- [ ] **`release:major`**, **`release:minor`**, **`release:patch`** exist.
+      Every pull request needs exactly one; `PR release metadata` fails
+      without it (see ADR-0006 and `RELEASING.md`).
+
 ## Tokens / secrets
 
-- [ ] **`RELEASE_PLEASE_TOKEN`** (repo or environment secret): a fine-grained PAT
-      or GitHub App installation token with `contents: write` and
-      `pull-requests: write`. Required so that the GitHub Release created when the
-      Release Please PR merges **triggers `release.yml`** — the built-in
-      `GITHUB_TOKEN` cannot trigger downstream workflows. Without it, publish
-      `release.yml` manually via `workflow_dispatch`.
+- [ ] **No personal access token is needed.** `release.yml` triggers on a
+      successful CI `workflow_run`, which fires normally for `GITHUB_TOKEN`,
+      so nothing depends on a long-lived credential to cascade.
 - [ ] No PyPI API token is needed or wanted (publishing uses OIDC).
 
 ## GitHub — release environment **(required to publish)**
@@ -84,8 +88,7 @@ the first real release.
 
 1. Disable the PyPI Trusted Publisher for `release.yml` and delete the `pypi`
    environment (or remove its reviewers) to stop all publishing immediately.
-2. Revoke `RELEASE_PLEASE_TOKEN`.
-3. Review recent Actions runs and the audit log for unexpected publishes.
-4. Yank affected versions on PyPI and ship a corrected patch (see
+2. Review recent Actions runs and the audit log for unexpected publishes.
+3. Yank affected versions on PyPI and ship a corrected patch (see
    [`RELEASING.md`](https://github.com/SoBatista/sobatista-ai/blob/main/RELEASING.md)).
 5. Re-establish the Trusted Publisher and environment only after review.

@@ -16,7 +16,8 @@ authoritative reference for maintainers; contributors mainly need the
 - **Single source of truth:** `[project].version` in `pyproject.toml`. At runtime
   `sobai --version` reports the *installed package metadata* (built from that
   field). The constant in `src/sobai/__init__.py` is only a source-checkout
-  fallback and is kept in sync automatically by Release Please.
+  fallback; `scripts/check_version.py` fails CI if it ever drifts from
+  `pyproject.toml`.
 - **Tag ↔ version:** the release workflow refuses to publish if the tag does not
   match the packaged version (`scripts/check_version_tag.py`).
 
@@ -60,43 +61,68 @@ Dropping a Python version is a breaking change (minor bump pre-1.0).
 Only the most recent released version receives security fixes. See
 [`SECURITY.md`](SECURITY.md#supported-versions).
 
-## Release impact (every PR)
+## One pull request, one version
 
-Every pull request must declare **exactly one** release impact by ticking a box
-in the PR template:
+Every pull request merged into `main` includes **exactly one** version increase,
+so the version that reaches `main` is the one that was reviewed:
 
-- `major` — backward-incompatible change
-- `minor` — backward-compatible feature
-- `patch` — backward-compatible fix
-- `none` — docs/tests/chore only, no release
+- `release:major` — breaking behavior; `X.y.z` becomes `X+1.0.0`.
+- `release:minor` — backward-compatible feature; `x.Y.z` becomes `x.Y+1.0`.
+- `release:patch` — fix, documentation, configuration, or maintenance;
+  `x.y.Z` becomes `x.y.Z+1`.
 
-This is validated automatically by the **PR release impact** workflow
-(`scripts/check_release_impact.py`). The impact must be consistent with the
-Conventional Commit types in the PR (`feat` → minor, `fix` → patch,
-`feat!`/`fix!`/`BREAKING CHANGE:` → major).
+The arithmetic is exactly what the label says, at every version. There are no
+pre-1.0 special cases: `release:minor` on `0.1.1` is `0.2.0`, never `0.1.2`.
 
-## How releases are prepared and published
+The pull request must apply exactly one label and update all four places the
+version is recorded, plus the changelog:
 
-Two workflows implement a **prepare → publish** split. Both are committed and
-configured, but **publishing is inert** until a maintainer acts (no tag is
-created by this repository's automation on its own).
+| What | Where |
+|---|---|
+| Source of truth | `[project].version` in `pyproject.toml` |
+| Lockfile | `uv.lock` — run `uv lock` |
+| Source-checkout fallback | `_FALLBACK_VERSION` in `src/sobai/__init__.py` |
+| Release notes | a dated `## [x.y.z] - YYYY-MM-DD` section in `CHANGELOG.md` |
 
-1. **Prepare — `release-please.yml`.** On every push to `main`, Release Please
-   maintains a *release PR* that bumps the version and updates `CHANGELOG.md`
-   from Conventional Commits. Nothing is tagged or published until that PR is
-   merged.
-2. **Publish — `release.yml`.** Triggered only when a GitHub Release is published
-   (normally by merging the release PR) or by manual `workflow_dispatch` against
-   an existing tag. It:
-   - builds the sdist + wheel once and reuses them for every downstream job;
-   - verifies tag ↔ version, runs `twine check --strict`;
-   - smoke-installs **both** artifacts and runs the CLI;
-   - generates SHA-256 checksums and a **CycloneDX SBOM**;
-   - creates **signed build-provenance attestations**;
-   - uploads artifacts, checksums, and SBOM to the GitHub Release;
-   - publishes to PyPI via **Trusted Publishing (OIDC)** from the protected
-     `pypi` environment — **no long-lived token exists in this repo** — which
-     also attaches PEP 740 attestations.
+Check it locally before pushing:
+
+```bash
+uv run python scripts/check_version.py --consistency
+```
+
+CI runs `--pr` on every pull request (including when a label changes) and fails
+if the label and the version disagree. Requiring the reviewed pull request to
+carry the version avoids a post-merge bot commit: it keeps branch protection
+intact, needs no bot able to open pull requests, and makes the exact release
+state visible during review.
+
+**Dependabot pull requests** carry no label and do not touch `pyproject.toml`, so
+they fail release metadata until a maintainer pushes a `release:patch` bump onto
+the branch. This is a deliberate, accepted cost.
+
+## How releases are published
+
+There is no release PR and no bot commit. A successful CI run on `main` is, by
+construction, a reviewed release candidate, and `release.yml` takes it from
+there:
+
+1. **gate** — re-validates version consistency, refuses to move an existing tag,
+   and refuses a version that is not newer than the newest existing tag.
+2. **build** — sdist + wheel built once and reused; tag ↔ version check;
+   `twine check --strict`; SHA-256 checksums; CycloneDX SBOM.
+3. **smoke** — installs **both** artifacts and runs the CLI.
+4. **provenance** — signed build-provenance attestations.
+5. **tag-and-release** — only now is the annotated `vX.Y.Z` tag created, with a
+   GitHub Release whose notes are that version's reviewed changelog section, and
+   the artifacts, checksums, and SBOM attached.
+6. **pypi-publish** — Trusted Publishing (OIDC) from the protected `pypi`
+   environment. **No long-lived token exists in this repository.**
+
+Nothing is tagged before the artifacts are built, installed, and attested, and
+PyPI — the only irreversible step — runs last. The trigger is `workflow_run`
+rather than `release: published` because a Release created by `GITHUB_TOKEN`
+cannot trigger another workflow; publishing therefore needs **no personal access
+token**.
 
 All third-party Actions are pinned to full commit SHAs; jobs use least-privilege
 permissions.
@@ -105,27 +131,37 @@ permissions.
 
 Prerequisites are the one-time settings in
 [`docs/repo-settings-checklist.md`](docs/repo-settings-checklist.md) (PyPI
-Trusted Publisher, protected `pypi` environment, `RELEASE_PLEASE_TOKEN`).
+Trusted Publisher and the protected `pypi` environment).
 
 **Stable release (the normal path):**
 
-1. Merge the open Release Please PR on `main`. This tags `vX.Y.Z` and creates the
-   GitHub Release.
-2. `release.yml` runs and publishes to PyPI. Watch the run.
-3. Verify: `pipx install sobatista-ai==X.Y.Z` (or `uv tool install`), then
+1. Open a PR that makes the change, applies one `release:*` label, bumps the
+   version in all four places, and adds the dated changelog section.
+2. Merge it once CI is green. That is the whole release action.
+3. Watch the `Release` run: it tags `vX.Y.Z`, creates the GitHub Release, and
+   publishes to PyPI.
+4. Verify: `pipx install sobatista-ai==X.Y.Z` (or `uv tool install`), then
    `sobai --version`.
 
-**First alpha / other pre-releases.** Release Please is configured for final
-releases; cut a pre-release manually because SemVer pre-release ordering and PEP
-440 differ:
+**Republishing an existing tag.** Dispatch `release.yml` manually with the tag
+(for example after a transient PyPI failure). Every step is idempotent: the tag
+is not recreated, the Release is reused, assets are re-uploaded with `--clobber`,
+and PyPI upload uses `skip-existing`.
 
-1. Set the version in `pyproject.toml` to the PEP 440 pre-release (e.g.
-   `0.1.0a1`) via a normal PR, or add a `Release-As: 0.1.0-alpha.1` footer to a
-   commit so Release Please proposes it.
-2. After merge, create the tag and release: `gh release create v0.1.0-alpha.1
-   --prerelease --generate-notes`. Mark it a pre-release so it is not "latest".
-3. `release.yml` publishes it as a PyPI pre-release (pip won't install it without
-   `--pre` or an exact pin).
+**Pre-releases (alpha/beta/rc) are manual.** SemVer pre-release ordering and PEP
+440 differ, and `check_version.py` accepts only exact `x.y.z`, so cut them by
+hand:
+
+1. Set the PEP 440 pre-release version (e.g. `0.2.0a1`) in `pyproject.toml` on a
+   branch, without a `release:*` label, and do not merge it to `main`.
+2. Tag and release it directly: `gh release create v0.2.0a1 --prerelease
+   --generate-notes`. Mark it a pre-release so it is not "latest".
+3. Dispatch `release.yml` against that tag to publish it. pip will not install it
+   without `--pre` or an exact pin.
+
+**A tag that would have to move** means a pull request reached `main` without its
+version increment. The release run fails loudly and changes nothing; fix it by
+merging a follow-up PR that bumps the version.
 
 ## Recovery / rollback
 
