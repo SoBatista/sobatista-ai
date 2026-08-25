@@ -23,6 +23,7 @@ from .common import (
     cost_accounting,
     enforce_egress,
     get_ctx,
+    history_summary,
     read_prompt_arg,
     recorded_model,
     resolve_provider,
@@ -378,7 +379,7 @@ def ask_cmd(
 ) -> None:
     """Answer a natural-language question via read-only Notion tools."""
     app = get_ctx(ctx)
-    text = read_prompt_arg(prompt)
+    question = read_prompt_arg(prompt)
     connector = _connector(app)
     provider, provider_name, model_id = _prepare_cloud(app)
     from sobai.providers.registry import billing_mode
@@ -392,10 +393,12 @@ def ask_cmd(
         model=recorded_model(model_id),
         local_only=app.policy.local_only,
         auth_mode=billing_mode(provider_name),
-        summary=text[:200],
+        # Shape only: the question, and anything Notion returns for it, stay out
+        # of local state.
+        summary=history_summary("notion ask", question),
     )
     params = GenerateParams(
-        model=model_id, system=ASK_SYSTEM, messages=[Message.user(text)], max_tokens=1500
+        model=model_id, system=ASK_SYSTEM, messages=[Message.user(question.text)], max_tokens=1500
     )
 
     async def _go() -> tuple[RunResult, int]:

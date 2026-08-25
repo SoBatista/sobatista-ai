@@ -48,8 +48,15 @@ When a fixed release is published, older affected pre-releases are
 - Retrieved content can never enable a tool, change policy, or alter the system
   prompt.
 - All external text is passed through `safeterm.sanitize` before display, which
-  strips ANSI/OSC/control sequences so a malicious title or page body cannot
-  drive your terminal.
+  strips ANSI/OSC/control sequences and Unicode bidirectional controls so a
+  malicious title, page body, or model answer cannot drive your terminal. Every
+  command renders model output through one shared path
+  (`cli/common.py::ModelOutput`), so streaming and one-shot providers get the
+  same treatment.
+- These defenses **reduce prompt-injection risk; they do not eliminate it.** No
+  prompt arrangement can make a model's behaviour immune to hostile input. The
+  guarantees that hold are structural: no tools, no shell, no filesystem, no
+  network, no silent egress, and `--local-only` failing closed.
 
 ### Execution safety
 - No model-generated shell execution by default; no arbitrary Python; no dynamic
@@ -68,6 +75,13 @@ When a fixed release is published, older affected pre-releases are
   (`public`/`internal`/`sensitive`/`restricted`); cloud egress of connector data
   prompts for consent unless a persistent policy is set. Each egress is recorded
   in the local audit log (metadata only — never content).
+- **Local run history is content-free.** Every model-backed command records the
+  command, provider, model, billing mode, token counts, timings, status, and a
+  summary of the form `ask · stdin · 412 bytes · 409 chars`. Prompts, answers,
+  connector content, and credentials are never written to it — and neither is a
+  digest of your prompt. Databases created by development builds before 0.2.0
+  still hold a 200-character prompt prefix in historical summaries; see
+  [PRIVACY.md](PRIVACY.md#databases-from-earlier-development-builds).
 
 ### No silent fallback
 - SoBatista AI never silently switches providers (e.g. local → cloud) on error.

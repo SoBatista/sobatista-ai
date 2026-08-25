@@ -56,7 +56,14 @@ from sobai.skills.runner import (
 from sobai.ui import OutputMode
 from sobai.ui.console import render_untrusted
 
-from .common import cost_accounting, enforce_egress, get_ctx, recorded_model, run_async
+from .common import (
+    ModelOutput,
+    cost_accounting,
+    enforce_egress,
+    get_ctx,
+    recorded_model,
+    run_async,
+)
 
 skills_app = typer.Typer(
     help="Reusable, inspectable task recipes.",
@@ -484,23 +491,15 @@ def _execute(
     )
 
     async def _go() -> None:
-        streamed = False
-
-        def _on_text(chunk: str) -> None:
-            nonlocal streamed
-            streamed = True
-            app.ui.stream_write(chunk)
-
+        output = ModelOutput(app.ui)
         execution = await execute_skill(
             provider,
             params,
             db=app.db,
             run_id=run_id,
             stream=streaming,
-            on_text=_on_text if streaming else None,
+            on_text=output.on_text if streaming else None,
         )
-        if streamed:
-            app.ui.stream_end()
         mode, cost_usd, cost_kind = cost_accounting(resolution_provider, execution.usage)
         app.db.finish_run(
             run_id,
@@ -528,10 +527,10 @@ def _execute(
         )
         if app.ui.json_mode:
             app.ui.print_json(result.to_json())
-        elif not streamed and execution.text:
+        else:
             # Either streaming was off, or a one-shot provider returned the whole
             # answer without emitting deltas. Both must still show the output.
-            app.ui.print_untrusted(execution.text)
+            output.finish(execution.text)
 
     try:
         run_async(_go())

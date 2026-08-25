@@ -38,7 +38,7 @@ from sobai.providers.registry import (
 from sobai.skills.registry import discover_skills
 from sobai.ui.console import render_untrusted
 
-from .common import cost_accounting, recorded_model
+from .common import ModelOutput, PromptText, cost_accounting, history_summary, recorded_model
 
 SESSION_SYSTEM = (
     "You are SoBatista AI in an interactive session. Be concise and accurate. "
@@ -306,26 +306,20 @@ class InteractiveSession:
             profile=self.profile or app.config.config.active_profile,
             local_only=app.policy.local_only,
             auth_mode=billing_mode(provider_name),
-            summary=text[:200],
+            # Shape only. A session turn is as sensitive as any other prompt, so
+            # the history entry describes it rather than quoting it.
+            summary=history_summary("session", PromptText(text=text, source="interactive")),
         )
         import time
 
         started = time.monotonic()
-        streamed = False
-
-        def _on_text(chunk: str) -> None:
-            nonlocal streamed
-            streamed = True
-            app.ui.stream_write(chunk)
-
+        output = ModelOutput(app.ui)
         orch = Orchestrator(provider, registry=None, db=app.db, run_id=run_id)
         try:
-            result = await orch.run(params, stream=True, on_text=_on_text)
-            if streamed:
-                app.ui.stream_end()
-            elif result.text:
-                # A one-shot provider that streamed no deltas — show the reply.
-                app.ui.print_untrusted(result.text)
+            result = await orch.run(params, stream=True, on_text=output.on_text)
+            # Streamed deltas are on screen already; a one-shot provider's whole
+            # reply is not. Either way it is shown exactly once.
+            output.finish(result.text)
         except SobaiError:
             app.db.finish_run(run_id, status="error", exit_code=1)
             raise

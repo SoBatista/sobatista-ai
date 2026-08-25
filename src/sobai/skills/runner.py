@@ -169,9 +169,10 @@ async def execute_skill(
 def run_summary(skill: Skill) -> str:
     """The run-history summary for a Skill run.
 
-    Deliberately the Skill's identity and nothing about the input. ``sobai ask``
-    records a truncated prompt; a Skill run must not, because the input is
-    frequently the sensitive part.
+    Deliberately the Skill's identity and nothing about the input, which is
+    frequently the sensitive part of a run. Every other model-backed command
+    records the same kind of content-free summary through
+    :func:`sobai.cli.common.history_summary`.
     """
     return f"skill {skill.reference}"
 

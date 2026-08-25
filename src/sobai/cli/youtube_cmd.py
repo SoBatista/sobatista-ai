@@ -444,13 +444,13 @@ def ask_cmd(
 ) -> None:
     """Ask a natural-language question answered via read-only YouTube tools."""
     app = get_ctx(ctx)
-    text = read_prompt_arg(prompt)
+    question = read_prompt_arg(prompt)
     connector = _connector(app)
     provider, provider_name, model_id = _prepare_cloud(app)
     registry = connector.tools()
     from sobai.providers.registry import billing_mode
 
-    from .common import cost_accounting, recorded_model
+    from .common import cost_accounting, history_summary, recorded_model
 
     run_id = uuid.uuid4().hex
     app.db.start_run(
@@ -460,10 +460,15 @@ def ask_cmd(
         model=recorded_model(model_id),
         local_only=app.policy.local_only,
         auth_mode=billing_mode(provider_name),
-        summary=text[:200],
+        # Shape only: the question, and anything YouTube returns for it, stay
+        # out of local state.
+        summary=history_summary("youtube ask", question),
     )
     params = GenerateParams(
-        model=model_id, system=YT_ASK_SYSTEM, messages=[Message.user(text)], max_tokens=1500
+        model=model_id,
+        system=YT_ASK_SYSTEM,
+        messages=[Message.user(question.text)],
+        max_tokens=1500,
     )
 
     async def _go() -> tuple[RunResult, int]:

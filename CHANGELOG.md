@@ -84,12 +84,42 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   command raising `typer.Exit(code)` — reported success. `main` now honours it.
 - **A one-shot provider's answer could be swallowed while streaming.** The
   streaming path rendered text deltas only, so a provider that returns a whole
-  completion without emitting any delta displayed nothing at all. The `sobai run`
-  path now tracks whether a delta actually arrived and renders the final text
-  when none did, so streaming and one-shot providers both produce output.
-  `sobai ask` still uses the older pattern and is unchanged by this release.
+  completion without emitting any delta — the `claude-cli` and `codex-cli`
+  bridges, and any endpoint that sends no text delta — completed successfully
+  and displayed nothing at all. `sobai ask`, `sobai run`, and the interactive
+  session now share one renderer (`cli/common.py::ModelOutput`) that remembers
+  whether a non-empty delta actually arrived: streamed output is not repeated,
+  and a one-shot answer is printed exactly once. Sanitization, `--no-stream`,
+  quiet mode, JSON cleanliness, cancellation, and exit codes are unchanged, and
+  no decorative output is ever emitted in JSON mode.
+
+### Security
+- **Run history no longer stores prompt text.** `sobai ask`, the interactive
+  session, `notion ask`, and `youtube ask` recorded `summary=text[:200]`, putting
+  the first 200 characters of every question into `state.db`, where `sobai
+  history`, `sobai runs show`, and any later reader could see it. Every
+  model-backed command now records a content-free summary of the form
+  `ask · stdin · 412 bytes · 409 chars` — operation, input source, and size.
+  Provider, model, billing mode, token counts, timings, and status keep their
+  existing typed fields, and audit records continue to hold data class and
+  destination but never connector or model content. A prompt *digest* is
+  deliberately not stored either: a short or predictable prompt can be guessed
+  and confirmed against a hash. A source-level test asserts that every
+  `start_run` call site builds its summary through a content-free helper.
+- **Existing history is left alone.** Nothing rewrites or deletes rows already in
+  your database, so a database written by a pre-0.2.0 development build still
+  contains those prompt prefixes.
+  [PRIVACY.md](PRIVACY.md#databases-from-earlier-development-builds) documents
+  how to review them (`sobai --json history`, `sobai runs show`) and how to
+  discard the database if you want them gone. Stored values are now rendered as
+  untrusted text by `sobai runs show`, so a prompt kept by an older build cannot
+  drive the terminal when it is read back.
 
 ### Documentation
+- Privacy, security, and threat-model text updated for content-free run
+  summaries, the shared one-shot renderer, and the historical-database
+  limitation, and made explicit that prompt-injection defenses reduce risk
+  rather than eliminate it.
 - New [Skills guide](docs/skills.md) covering the format, trust boundaries,
   namespaces, installation, authoring, model mappings, pipelines, dry-run
   behaviour, data classification, why current-directory auto-loading is

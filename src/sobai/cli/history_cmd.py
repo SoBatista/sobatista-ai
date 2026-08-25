@@ -7,6 +7,7 @@ from typing import Annotated
 import typer
 
 from sobai.core.errors import NotFoundError
+from sobai.ui.console import render_untrusted
 
 from .common import get_ctx
 
@@ -62,6 +63,9 @@ def runs_show(
         app.ui.print_json({"run": run, "tool_calls": tool_calls})
         return
     app.ui.rule(f"Run {run['id'][:12]}")
+    # Stored values are rendered as untrusted text. New summaries are content-free,
+    # but a database written by a pre-0.2.0 development build can still hold a
+    # prompt prefix, and a prompt is not something a terminal should interpret.
     for key in (
         "command",
         "provider",
@@ -83,7 +87,7 @@ def runs_show(
         "finished_at",
         "summary",
     ):
-        app.ui.print(f"  [heading]{key}[/heading]: {run.get(key)}")
+        app.ui.print(f"  [heading]{key}[/heading]: {render_untrusted(str(run.get(key)))}")
     if tool_calls:
         rows = [
             [str(t["round"]), t["tool_name"], "write" if t["writes"] else "read", t["status"]]

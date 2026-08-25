@@ -77,8 +77,11 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   visually reorder text (Trojan-Source).
 - **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS, stray C0/C1 control
   bytes, **and Unicode bidi/format controls**; Rich markup is escaped
-  (`ui/console.py`). Applied to connector data and to interactive-session model
-  output (`cli/session.py`). Covered by tests.
+  (`ui/console.py`). Applied to connector data, to model output from every
+  command through the shared renderer (`cli/common.py::ModelOutput`, used by
+  `ask`, `run`, and the session), and to values read back out of local state —
+  a run summary written by an older build can still hold prompt text
+  (`cli/history_cmd.py`). Covered by tests.
 
 ## 6a. Interactive session abuse
 - **Risk:** The chat session executes tools/shell, leaks identity, persists
@@ -186,8 +189,18 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ `--dry-run` on a Skill makes no provider, connector, network, or
     subprocess call and reports the input by source, size, and hash — never
     content (`skills/plan.py`).
-  - ✅ Skill run history and audit records carry identity and shape only: the
-    prompt and the output are never persisted (`skills/runner.py`).
+  - ✅ Run history and audit records carry identity and shape only, for **every**
+    model-backed command. Summaries are built by
+    `cli/common.py::history_summary` (`ask`, the session, `notion ask`,
+    `youtube ask`) or `skills/runner.py::run_summary` (`run`); the prompt, the
+    output, and connector content are never persisted. A prompt *digest* is not
+    stored either — a short or predictable prompt can be guessed and confirmed
+    against a hash. Enforced by a source-level test over every `start_run` call
+    site, not only by review.
+  - ⚠️ Databases written by development builds before 0.2.0 still contain the
+    first 200 characters of each prompt in historical run summaries. Existing
+    history is never rewritten or deleted on the user's behalf; PRIVACY.md
+    documents how to review it and how to discard the database.
 
 ## 8a. Malicious or unintended self-update source
 - **Risk:** `sobai update` installs code from an attacker-controlled or wrong
@@ -213,6 +226,15 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Human approval required for any publish/release.
 
 ## Residual risks / non-goals (Phase 1)
+- **Prompt injection is reduced, not eliminated.** Layering, boundary markers,
+  marker defanging, and refusing tools during a Skill run bound *what a model can
+  reach*; they cannot make a model's behaviour immune to hostile text. The
+  durable guarantees are the ones outside the model: no tools, no shell, no
+  filesystem, no network, no silent egress, `--local-only` failing closed. Model
+  output is treated as untrusted for the same reason.
+- The size and source of a prompt are recorded in run history. Byte counts are
+  metadata, but they are not nothing: they reveal that a run happened and roughly
+  how large it was.
 - Trusting the local OS keyring and the user's own account credentials with the
   third-party providers.
 - A compromised local machine (malware with the user's privileges) is out of

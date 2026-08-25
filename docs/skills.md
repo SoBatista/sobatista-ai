@@ -426,7 +426,10 @@ A Skill run records identity and shape, never content:
 - Audit: the Skill's qualified name, version, and digest; the input's source,
   size, and hash; the data class and destination provider.
 
-Your prompt and the model's output are not stored. See [PRIVACY.md](https://github.com/SoBatista/sobatista-ai/blob/main/PRIVACY.md).
+Your prompt and the model's output are not stored. Every other model-backed
+command follows the same rule — `sobai ask`, the interactive session, and the
+connector `ask` commands record a content-free summary such as
+`ask · stdin · 412 bytes · 409 chars`. See [PRIVACY.md](https://github.com/SoBatista/sobatista-ai/blob/main/PRIVACY.md).
 
 ## Provenance
 
