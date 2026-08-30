@@ -13,8 +13,10 @@ from sobai.core.types import GenerateParams, Message
 from sobai.ui import OutputMode
 
 from .common import (
+    ModelOutput,
     cost_accounting,
     get_ctx,
+    history_summary,
     read_prompt_arg,
     recorded_model,
     resolve_provider,
@@ -56,13 +58,13 @@ def ask_command(
       git diff | sobai ask "Summarize these changes"
     """
     app = get_ctx(ctx)
-    text = read_prompt_arg(prompt)
+    question = read_prompt_arg(prompt)
     provider, provider_name, model_id = resolve_provider(app)
 
     pconf = app.config.config.providers.get(provider_name)
     params = GenerateParams(
         model=model_id,
-        messages=[Message.user(text)],
+        messages=[Message.user(question.text)],
         system=system or SYSTEM_BASE,
         max_tokens=max_tokens,
         temperature=temperature,
@@ -80,10 +82,12 @@ def ask_command(
         profile=app.opts.profile or app.config.config.active_profile,
         local_only=app.policy.local_only,
         auth_mode=billing_mode(provider_name),
-        summary=text[:200],
+        # Shape only: what ran, from where, how big. Never the question itself.
+        summary=history_summary("ask", question),
     )
 
     streaming = not no_stream and app.ui.mode is OutputMode.TEXT
+    output = ModelOutput(app.ui)
 
     async def _go() -> None:
         import time
@@ -91,11 +95,11 @@ def ask_command(
         started = time.monotonic()
         orch = Orchestrator(provider, registry=None, db=app.db, run_id=run_id)
         try:
-            if streaming:
-                result = await orch.run(params, stream=True, on_text=app.ui.stream_write)
-                app.ui.stream_end()
-            else:
-                result = await orch.run(params, stream=False)
+            result = await orch.run(
+                params,
+                stream=streaming,
+                on_text=output.on_text if streaming else None,
+            )
         finally:
             await provider.aclose()
 
@@ -127,8 +131,10 @@ def ask_command(
                     "usage": result.usage.model_dump(),
                 }
             )
-        elif not streaming:
-            app.ui.print_untrusted(result.text)
+        else:
+            # Streamed deltas are already on screen; a one-shot provider's whole
+            # answer is not. `finish` renders whichever actually happened, once.
+            output.finish(result.text)
 
     try:
         run_async(_go())

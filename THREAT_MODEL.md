@@ -77,8 +77,11 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   visually reorder text (Trojan-Source).
 - **Controls:** ✅ `core/safeterm.py` strips CSI/OSC/DCS, stray C0/C1 control
   bytes, **and Unicode bidi/format controls**; Rich markup is escaped
-  (`ui/console.py`). Applied to connector data and to interactive-session model
-  output (`cli/session.py`). Covered by tests.
+  (`ui/console.py`). Applied to connector data, to model output from every
+  command through the shared renderer (`cli/common.py::ModelOutput`, used by
+  `ask`, `run`, and the session), and to values read back out of local state —
+  a run summary written by an older build can still hold prompt text
+  (`cli/history_cmd.py`). Covered by tests.
 
 ## 6a. Interactive session abuse
 - **Risk:** The chat session executes tools/shell, leaks identity, persists
@@ -88,6 +91,82 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   explicit bounds and no disk history; welcome screen shows no identity/paths/
   secrets; `--local-only` hard-fails before cloud egress; no provider fallback;
   session-only switches never rewrite persistent defaults (`cli/session.py`).
+
+## 6b. A malicious or careless Skill
+- **Risk:** A shared "task recipe" carries a hostile system prompt, silently
+  replaces one the user trusts, smuggles executable content, or hides text a
+  reviewer cannot see.
+- **Controls:**
+  - ✅ Skills are **prompt/data only**: a TOML manifest plus a Markdown prompt.
+    No executable content, no dependencies, no registered tools. The
+    `sobai.skills` package contains no code that can execute, fetch, or open
+    anything (`docs/adr/0007-skills-not-executable-plugins.md`).
+  - ✅ A Skill grants nothing. Runs use `registry=None`, so no tool can be called
+    whatever the prompt asks; a Skill *declaring* required tools is refused
+    rather than run without them (`skills/runner.py::assert_tools_available`).
+  - ✅ Immutable policy is always first in the system prompt and the Skill's text
+    is labelled subordinate; it cannot change policy, raise limits, request
+    credentials, authorize writes, disable redaction, or bypass `--local-only`
+    (`skills/renderer.py::SYSTEM_POLICY`).
+  - ✅ **No silent shadowing:** `builtin:`/`user:` namespaces, ambiguity is an
+    error naming both candidates, and the namespace comes from the load location
+    rather than the manifest, so a user Skill cannot claim to be a built-in
+    (`skills/registry.py`).
+  - ✅ **No auto-discovery:** only packaged built-ins and
+    `~/.config/sobai/skills/` are searched — never the working directory, the
+    repository being worked in, `.sobai/`, or an environment-named path — so a
+    checkout cannot supply a system prompt merely because `sobai` runs inside it.
+  - ✅ Terminal-control characters and Unicode bidirectional controls in a Skill's
+    manifest or prompt are **refused, not stripped**: a prompt that displays
+    differently from how it reads cannot be reviewed
+    (`skills/loader.py::assert_reviewable_text`).
+  - ✅ Content-addressed by a SHA-256 digest computed over the normalized
+    manifest and prompt — never asserted by the author — and shown in `show`,
+    `list`, plans, results, and audit records.
+  - ✅ Strict portable names reject separators, traversal, control characters,
+    non-ASCII look-alikes, and reserved names; every accepted name is provably a
+    direct child of the Skills directory (property-tested).
+
+## 6c. Untrusted input to a Skill run
+- **Risk:** The material a user pipes in contains an injection, forges the input
+  boundary, or is a device/binary/oversized file that hangs or floods the run.
+- **Controls:**
+  - ✅ Input is a **separate user message** inside explicit boundary markers,
+    never interpolated into the system layer; text impersonating the markers is
+    defanged so input cannot close its own block (`skills/renderer.py`).
+  - ✅ Exactly one input source per run; a positional argument plus `--file` is an
+    error, and stdin is a fallback so an inherited pipe cannot replace an
+    explicit argument. With no input on a terminal the run fails immediately and
+    never blocks (`skills/inputs.py`).
+  - ✅ Bounded by bytes *and* decoded characters, per Skill; binary content,
+    invalid UTF-8, directories, devices, and FIFOs are refused with actionable
+    errors.
+  - ✅ Input is inert: a URL in it is never fetched, a path never opened, a
+    command never run — there is no code in the package that could.
+  - ✅ Variables carry parameters, not content: declared scalars only, validated
+    by type before any provider is contacted, capped in length, and refused if
+    they contain control or bidirectional characters.
+
+## 6d. Skill installation tampering
+- **Risk:** A crafted directory escapes the Skills directory, swaps content
+  between validation and install, wins a race with a concurrent install, or
+  leaves a half-installed Skill the loader will happily use.
+- **Controls:**
+  - ✅ Symlinks, hard links, non-regular files, unexpected entries, case-only
+    collisions, oversized files, and partial directories are all refused
+    (`skills/loader.py::read_skill_files`).
+  - ✅ The destination is derived from the validated manifest name and asserted to
+    be a direct child of the Skills directory.
+  - ✅ Installation writes the **bytes that were validated and hashed**, held in
+    memory — never a second read of the source — so a TOCTOU swap cannot
+    substitute content (regression-tested).
+  - ✅ Atomic: staged in a private directory and moved with a single rename; a
+    failed replacement rolls back the previous version.
+  - ✅ Race-safe: an `O_EXCL` directory lock serialises installs; a concurrent
+    install is refused, not interleaved. Debris from an interrupted install is
+    cleared only while that lock is held.
+  - ✅ Nothing is ever downloaded: `sobai skills install` takes a local path
+    only. Remote installation is deferred until signing and a trust root exist.
 
 ## 7. Excessive model tool loops
 - **Risk:** A runaway agent loops tools indefinitely (cost/DoS).
@@ -102,6 +181,26 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Egress consent prompt showing connector + data class before send, and an
     audit record of each egress — wired through the YouTube AI commands
     (`cli/youtube_cmd.py` → `cli/common.py::enforce_egress`, `storage/db.py`).
+  - ✅ Skill runs are classified (`--data-class`, default `internal`) and gated
+    by the same engine; the prompt names the skill, class, destination provider
+    and model, and input size. Non-interactive runs that need a decision **fail
+    with instructions** rather than proceeding, and `restricted` is denied
+    outright (`cli/skills_cmd.py`).
+  - ✅ `--dry-run` on a Skill makes no provider, connector, network, or
+    subprocess call and reports the input by source, size, and hash — never
+    content (`skills/plan.py`).
+  - ✅ Run history and audit records carry identity and shape only, for **every**
+    model-backed command. Summaries are built by
+    `cli/common.py::history_summary` (`ask`, the session, `notion ask`,
+    `youtube ask`) or `skills/runner.py::run_summary` (`run`); the prompt, the
+    output, and connector content are never persisted. A prompt *digest* is not
+    stored either — a short or predictable prompt can be guessed and confirmed
+    against a hash. Enforced by a source-level test over every `start_run` call
+    site, not only by review.
+  - ⚠️ Databases written by development builds before 0.2.0 still contain the
+    first 200 characters of each prompt in historical run summaries. Existing
+    history is never rewritten or deleted on the user's behalf; PRIVACY.md
+    documents how to review it and how to discard the database.
 
 ## 8a. Malicious or unintended self-update source
 - **Risk:** `sobai update` installs code from an attacker-controlled or wrong
@@ -127,6 +226,15 @@ Legend: ✅ implemented · 🚧 planned (arrives with the relevant connector/fea
   - ✅ Human approval required for any publish/release.
 
 ## Residual risks / non-goals (Phase 1)
+- **Prompt injection is reduced, not eliminated.** Layering, boundary markers,
+  marker defanging, and refusing tools during a Skill run bound *what a model can
+  reach*; they cannot make a model's behaviour immune to hostile text. The
+  durable guarantees are the ones outside the model: no tools, no shell, no
+  filesystem, no network, no silent egress, `--local-only` failing closed. Model
+  output is treated as untrusted for the same reason.
+- The size and source of a prompt are recorded in run history. Byte counts are
+  metadata, but they are not nothing: they reveal that a run happened and roughly
+  how large it was.
 - Trusting the local OS keyring and the user's own account credentials with the
   third-party providers.
 - A compromised local machine (malware with the user's privileges) is out of

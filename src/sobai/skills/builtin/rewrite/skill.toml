@@ -1,0 +1,53 @@
+schema_version = 1
+
+[skill]
+name = "rewrite"
+version = "1.0.0"
+description = "Rewrite supplied text for a chosen audience, tone, and length while preserving its meaning exactly."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["writing", "editing"]
+
+[input]
+description = "The prose to rewrite. Formatting that carries meaning is preserved."
+required = true
+max_bytes = 131072
+max_chars = 100000
+
+[output]
+format = "markdown"
+description = "The rewritten text only, with a single Note line if meaning could not be fully preserved."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[[variables]]
+name = "tone"
+type = "string"
+description = "The register to write in, e.g. plain, formal, warm."
+required = false
+default = "clear and neutral"
+max_length = 60
+
+[[variables]]
+name = "audience"
+type = "string"
+description = "Who the rewrite is for, e.g. a general reader, an executive."
+required = false
+default = "a general reader"
+max_length = 60
+
+[[variables]]
+name = "length"
+type = "string"
+description = "Target length relative to the original."
+required = false
+default = "same"
+choices = ["shorter", "same", "longer"]
+max_length = 16
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

@@ -1,0 +1,37 @@
+schema_version = 1
+
+[skill]
+name = "explain-code"
+version = "1.0.0"
+description = "Explain what supplied source code does, for a chosen audience, without guessing at unseen context."
+author = "SoBatista AI"
+license = "MIT"
+tags = ["code", "explanation"]
+
+[input]
+description = "A file, a diff, or a self-contained excerpt of source code in any language."
+required = true
+max_bytes = 262144
+max_chars = 200000
+
+[output]
+format = "markdown"
+description = "Purpose, flow, key decisions, edge cases, and visible risks."
+
+[policy]
+recommended_data_class = "internal"
+required_tools = []
+
+[[variables]]
+name = "audience"
+type = "string"
+description = "Who the explanation is for: newcomer, maintainer, or reviewer."
+required = false
+default = "maintainer"
+choices = ["newcomer", "maintainer", "reviewer"]
+max_length = 16
+
+[provenance]
+source = "SoBatista AI built-in skill pack"
+created = "2026-08-24"
+notes = "Original prompt written for SoBatista AI. Not copied or derived from any third-party prompt library."

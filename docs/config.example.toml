@@ -13,6 +13,24 @@ active_model = "qwen14b"     # a logical alias defined under [models]
 # `sobai update --source PATH` so later `sobai update` works from anywhere.
 # update_source = "/home/you/Documents/sobatista-ai"
 
+# --- Skills ----------------------------------------------------------------
+# Per-skill model preference. Keys are FULLY QUALIFIED skill names
+# ("builtin:name" / "user:name"); values are logical aliases defined under
+# [models] below — never vendor model ids, so the mapping stays portable.
+#
+# Precedence, most specific first:
+#   1. -p/--provider and -m/--model on the command line
+#   2. this table
+#   3. the active profile
+#   4. active_provider / active_model, then a provider's default_model
+#
+# `sobai skills show NAME` and `sobai --dry-run run NAME ...` both print which
+# rule won and why.
+[skills.models]
+# "builtin:summarize" = "fast"
+# "builtin:security-review" = "qwen14b"
+# "user:security-report" = "qwen14b"
+
 # --- Providers -------------------------------------------------------------
 [providers.anthropic]
 enabled = true

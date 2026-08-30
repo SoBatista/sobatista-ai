@@ -4,15 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sobatista-ai"
-# Single authoritative version source. Release Please bumps this (and the
-# source-checkout fallback in src/sobai/__init__.py) via a reviewed release PR.
-version = "0.1.1"
+# Single authoritative version source. Each pull request bumps this (and the
+# source-checkout fallback in src/sobai/__init__.py) by exactly the increment
+# its release: label declares — see ADR-0006 and scripts/check_version.py.
+version = "0.2.0"
 description = "One CLI. Any model. Your tools. A provider-neutral AI command-line interface."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "SoBatista" }]
-keywords = ["ai", "cli", "llm", "anthropic", "openai", "ollama", "orchestration", "youtube", "notion"]
+keywords = ["ai", "cli", "llm", "anthropic", "openai", "ollama", "orchestration", "youtube", "notion", "prompts", "skills"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",

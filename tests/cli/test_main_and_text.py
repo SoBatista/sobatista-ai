@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from sobai.cli import app as app_module
@@ -103,3 +104,33 @@ def test_runs_show_missing(runner: CliRunner, env: dict[str, str]) -> None:
     r = runner.invoke(app, ["runs", "show", "deadbeef"], env=env)
     assert r.exit_code != 0
     assert isinstance(r.exception, NotFoundError)
+
+
+def test_main_returns_130_on_cancellation(
+    env: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ctrl-C must exit 130, not 0.
+
+    Typer converts KeyboardInterrupt into an ``Exit(130)`` which, under
+    ``standalone_mode=False``, is *returned* rather than raised. ``main`` has to
+    honour that return value or every cancelled run reports success.
+    """
+    from sobai.cli import ask as ask_module
+
+    def _interrupt(*args: object, **kwargs: object) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(ask_module, "read_prompt_arg", _interrupt)
+    assert _run_main(["-p", "ollama", "-m", "ollama:x", "ask", "hi"]) == int(ExitCode.CANCELLED)
+
+
+def test_main_honours_an_explicit_typer_exit_code(
+    env: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sobai.cli import ask as ask_module
+
+    def _exit(*args: object, **kwargs: object) -> None:
+        raise typer.Exit(int(ExitCode.TOOL_LIMIT))
+
+    monkeypatch.setattr(ask_module, "read_prompt_arg", _exit)
+    assert _run_main(["-p", "ollama", "-m", "ollama:x", "ask", "hi"]) == int(ExitCode.TOOL_LIMIT)

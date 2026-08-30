@@ -11,6 +11,15 @@ This site collects the reference and developer documentation. Project overview,
 install, and quick-start live in the
 [README](https://github.com/SoBatista/sobatista-ai#readme).
 
+## Skills
+
+- [Skills](skills.md) — reusable, inspectable task recipes: the format, the
+  trust model, namespaces, installation, authoring, per-skill model mappings,
+  dry-run planning, data classification, and pipelines.
+- [Acknowledgements](acknowledgements.md) — the conceptual influence of
+  [Fabric](https://github.com/danielmiessler/Fabric), and confirmation that all
+  built-in prompts are original.
+
 ## Using the connectors
 
 - [YouTube connector](youtube.md) — read-only analytics via OAuth.
@@ -24,6 +33,8 @@ install, and quick-start live in the
 
 - [Authoring a provider](authoring-providers.md)
 - [Authoring a connector](authoring-connectors.md)
+- [Authoring a Skill](skills.md#the-skill-format) — the manifest schema and
+  what makes a good prompt.
 
 ## Project & release
 
