@@ -28,7 +28,7 @@ jobs:
         with:
           persist-credentials: false
       - name: actionlint
-        uses: reviewdog/action-actionlint@dbe5299849118fd6f099ba563d263d770955a64a # v1
+        uses: reviewdog/action-actionlint@d290e336d5a743810aef4404f757dc862276d2ae # v1
         with:
           reporter: github-check
           fail_on_error: true
@@ -43,7 +43,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
       - name: Run zizmor
         # Fails the build on any workflow security finding.
         run: uvx zizmor@1.29.0 --persona=regular .github/workflows
@@ -73,7 +73,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
       - name: Install runtime dependencies only
         run: uv sync --no-dev
       - name: Enforce license policy on runtime dependencies
