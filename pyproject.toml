@@ -7,7 +7,7 @@ name = "sobatista-ai"
 # Single authoritative version source. Each pull request bumps this (and the
 # source-checkout fallback in src/sobai/__init__.py) by exactly the increment
 # its release: label declares — see ADR-0006 and scripts/check_version.py.
-version = "0.2.0"
+version = "0.2.1"
 description = "One CLI. Any model. Your tools. A provider-neutral AI command-line interface."
 readme = "README.md"
 requires-python = ">=3.12"

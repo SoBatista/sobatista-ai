@@ -6,6 +6,30 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-24
+
+### Security
+- **certifi** 2026.7.22 → 2026.10.23, fixing GHSA-6q48-6c7w-9gw2 (critical;
+  fixed upstream in 2026.10.19). certifi reaches every install as a runtime
+  dependency through `httpx`.
+- **urllib3** 2.7.0 → 2.8.0, fixing CVE-2026-97687 and CVE-2026-97689 (high).
+  urllib3 is pulled in only by the optional `docs` extra (`mkdocs-material` →
+  `requests`), not by the runtime install.
+
+### Changed — dependency updates
+- Runtime (Dependabot `python-runtime` group, #12): `typer` 0.27.1 → 0.27.2,
+  `pydantic` 2.13.4 → 2.13.5, `platformdirs` 4.11.3 → 4.11.7.
+- Development tooling (Dependabot `python-dev` group, #16): `ruff` 0.16.4 →
+  0.16.10, `mypy` 2.3.1 → 2.4.0, `types-pyyaml` 6.0.12.20260815 →
+  6.0.12.20260906.
+- CI (Dependabot `actions` group, #18): `astral-sh/setup-uv` 10.0.1 → 10.3.0,
+  `actions/upload-artifact` 7.0.1 → 7.0.2, `actions/download-artifact` 8.0.1 →
+  8.0.2, `github/codeql-action` 4.37.7 → 4.39.0, `ossf/scorecard-action` 2.4.4 →
+  2.5.0, and `reviewdog/action-actionlint` 1.73.2 → 1.80.2, all still pinned to
+  full commit SHAs.
+
+No behavior change.
+
 ## [0.2.0] - 2026-08-24
 
 ### Added — Skills: secure, reusable task recipes
